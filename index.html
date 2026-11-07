@@ -8,7 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <!-- Google Fonts: Mukta -->
+    <!-- Google Fonts: Mukta & Noto Sans Devanagari -->
     <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -22,6 +22,22 @@
         ::-webkit-scrollbar-track { background: #f1f5f9; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+                padding: 15px !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            .no-print { display: none !important; }
+        }
     </style>
 </head>
 <body class="text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
@@ -29,30 +45,35 @@
     <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <!-- Mobile Header -->
-    <header class="lg:hidden bg-slate-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-md">
+    <header class="lg:hidden bg-slate-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-md no-print">
         <div class="flex items-center gap-3">
             <button onclick="toggleSidebar()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white">
                 <i class="fas fa-bars text-lg"></i>
             </button>
-            <span class="font-bold text-lg truncate" id="mobile-org-title">खानेपानी प्रणाली</span>
+            <span class="font-bold text-lg truncate" id="mobile-org-title">खानेपानी तथा सहकारी प्रणाली</span>
         </div>
-        <div class="text-xs bg-blue-600 px-2.5 py-1 rounded-full font-semibold">२०८३-०७-२१</div>
+        <div class="text-xs bg-blue-600 px-2.5 py-1 rounded-full font-semibold" id="mobile-bs-date">२०८३-०७-२१</div>
     </header>
 
-    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden"></div>
+    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden no-print"></div>
 
     <div class="flex min-h-screen">
         <!-- Sidebar -->
-        <aside id="sidebar" class="fixed lg:sticky top-0 left-0 z-40 h-screen w-72 bg-slate-900 text-slate-200 flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0 shadow-2xl">
+        <aside id="sidebar" class="fixed lg:sticky top-0 left-0 z-40 h-screen w-72 bg-slate-900 text-slate-200 flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0 shadow-2xl no-print">
             <div class="p-4 border-b border-slate-800 flex items-center gap-3 bg-slate-950">
-                <img id="sidebar-logo-img" src="https://placehold.co/48x48/2563eb/ffffff?text=खा" alt="Logo" class="w-11 h-11 rounded-xl object-cover border border-slate-700 bg-white">
+                <img id="sidebar-logo" src="https://placehold.co/48x48/2563eb/ffffff?text=खा" alt="Logo" class="w-11 h-11 rounded-xl object-cover border border-slate-700 bg-white">
                 <div class="overflow-hidden">
                     <h1 id="sidebar-org-name" class="font-bold text-white text-base leading-tight truncate">पुरानागाउँ खानेपानी तथा सहकारी</h1>
                     <p class="text-xs text-emerald-400 flex items-center gap-1 mt-0.5">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span>लाइभ सेटिङ्स सक्रिय</span>
+                        <span>सुरक्षित लोकल + क्लाउड रेडी</span>
                     </p>
                 </div>
+            </div>
+
+            <div class="px-4 py-2.5 bg-slate-800/80 border-b border-slate-800 flex items-center justify-between text-xs">
+                <span class="text-slate-400"><i class="far fa-calendar-alt mr-1 text-blue-400"></i>आजको मिति:</span>
+                <span id="sidebar-bs-date" class="font-bold text-amber-300 text-sm tracking-wide">२०८३-०७-२१</span>
             </div>
 
             <nav class="flex-1 overflow-y-auto py-3 px-3 space-y-1 text-sm">
@@ -63,30 +84,64 @@
                     <i class="fas fa-tachometer-alt w-5 text-center text-cyan-400"></i> मासिक मिटर रिडिङ इन्ट्री
                 </button>
                 <button onclick="switchTab('bulk-reading')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="bulk-reading">
-                    <i class="fas fa-list-check w-5 text-center text-cyan-200"></i> बल्क मिटर रिडिङ
+                    <i class="fas fa-list-check w-5 text-center text-cyan-200"></i> बल्क मिटर रिडिङ (Bulk Reading)
                 </button>
                 <button onclick="switchTab('receipt')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="receipt">
                     <i class="fas fa-receipt w-5 text-center text-emerald-400"></i> भुक्तानी रसिद (Receipt)
                 </button>
                 <button onclick="switchTab('bulk-receipt')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="bulk-receipt">
-                    <i class="fas fa-file-invoice-dollar w-5 text-center text-emerald-200"></i> बल्क भुक्तानी
+                    <i class="fas fa-file-invoice-dollar w-5 text-center text-emerald-200"></i> बल्क भुक्तानी (Bulk Payment)
                 </button>
                 <button onclick="switchTab('statement')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="statement">
-                    <i class="fas fa-file-invoice w-5 text-center text-amber-400"></i> रिडिङ बिल र स्टेटमेन्ट
+                    <i class="fas fa-file-invoice w-5 text-center text-amber-400"></i> रिडिङ बिल र सदस्य स्टेटमेन्ट
                 </button>
                 <button onclick="switchTab('members')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="members">
                     <i class="fas fa-users w-5 text-center text-indigo-400"></i> मास्टर डाटाबेस र KYC
                 </button>
-                <button onclick="switchTab('loan')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="loan">
-                    <i class="fas fa-hand-holding-usd w-5 text-center text-purple-400"></i> ऋण इन्ट्री र स्टेटमेन्ट
+
+                <div class="pt-2 pb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">आम्दानी, खर्च र ट्याङ्कर</div>
+
+                <button onclick="switchTab('income')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="income">
+                    <i class="fas fa-arrow-down-left-and-arrow-up-right-to-center w-5 text-center text-green-400"></i> आम्दानी इन्ट्री र रिपोर्ट
                 </button>
+                <button onclick="switchTab('expense')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="expense">
+                    <i class="fas fa-money-bill-wave w-5 text-center text-rose-400"></i> खर्च इन्ट्री र शीर्षक रिपोर्ट
+                </button>
+                <button onclick="switchTab('tanker')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="tanker">
+                    <i class="fas fa-truck-droplet w-5 text-center text-sky-400"></i> ट्याङ्कर पानी बिक्री र ज्याला
+                </button>
+
+                <div class="pt-2 pb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">सहकारी ऋण, बैंक र पेरोल</div>
+
+                <button onclick="switchTab('loan')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="loan">
+                    <i class="fas fa-hand-holding-usd w-5 text-center text-purple-400"></i> ऋण इन्ट्री, स्टेटमेन्ट र डाटाबेस
+                </button>
+                <button onclick="switchTab('bank')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="bank">
+                    <i class="fas fa-university w-5 text-center text-teal-400"></i> बैंक इन्ट्री र बैंक स्टेटमेन्ट
+                </button>
+                <button onclick="switchTab('payroll')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="payroll">
+                    <i class="fas fa-user-tie w-5 text-center text-orange-400"></i> कर्मचारी पेरोल (Payroll)
+                </button>
+
+                <div class="pt-2 pb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">लेखा प्रतिवेदन र सेटिङ</div>
+
                 <button onclick="switchTab('reports')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="reports">
-                    <i class="fas fa-balance-scale w-5 text-center text-yellow-400"></i> वासलात र प्रतिवेदन
+                    <i class="fas fa-balance-scale w-5 text-center text-yellow-400"></i> वासलात, नाफा-नोक्सान र रिपोर्ट
                 </button>
                 <button onclick="switchTab('settings')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="settings">
-                    <i class="fas fa-cogs w-5 text-center text-slate-300"></i> मास्टर सेटिङ र अपडेट
+                    <i class="fas fa-cogs w-5 text-center text-slate-300"></i> मास्टर सेटिङ र ब्याकअप
                 </button>
             </nav>
+
+            <div class="p-3 bg-slate-950 border-t border-slate-800 text-xs flex items-center justify-between">
+                <div>
+                    <div class="text-slate-400">अपरेटर:</div>
+                    <div id="sidebar-operator-name" class="font-semibold text-white">व्यवस्थापक (Admin)</div>
+                </div>
+                <button onclick="exportFullBackup()" title="तुरुन्तै ब्याकअप डाउनलोड गर्नुहोस्" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition">
+                    <i class="fas fa-download mr-1"></i>Backup
+                </button>
+            </div>
         </aside>
 
         <!-- Main Workspace -->
@@ -94,31 +149,73 @@
 
             <!-- 1. DASHBOARD -->
             <section id="tab-dashboard" class="tab-section space-y-6">
-                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex justify-between items-center">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
                     <div>
-                        <h2 class="text-2xl font-bold text-slate-800" id="dash-org-title">मुख्य ड्यासबोर्ड</h2>
-                        <p class="text-sm text-slate-500">संस्थाको समग्र वित्तीय तथा महसुल स्थिति</p>
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <h2 class="text-2xl font-bold text-slate-800">मुख्य ड्यासबोर्ड (Executive Summary)</h2>
+                            <span id="dashboard-full-bs-date" class="px-3 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-full text-xs font-extrabold">
+                                <i class="far fa-calendar-check mr-1 text-amber-700"></i>२०८३ कार्तिक २१ गते, शनिबार (२०८३-०७-२१)
+                            </span>
+                        </div>
+                        <p class="text-sm text-slate-500">संस्थाको समग्र वित्तीय अवस्था, पानी महसुल संकलन, ऋण लगानी र मौज्दात विवरण</p>
                     </div>
-                    <button onclick="switchTab('settings')" class="px-4 py-2 bg-slate-800 text-white rounded-xl text-sm font-semibold">
-                        <i class="fas fa-cogs mr-1.5"></i>सेटिङ्स बदल्नुहोस्
-                    </button>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="switchTab('reading')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm transition">
+                            <i class="fas fa-plus-circle mr-1.5"></i>नयाँ रिडिङ इन्ट्री
+                        </button>
+                        <button onclick="switchTab('receipt')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition">
+                            <i class="fas fa-hand-holding-dollar mr-1.5"></i>भुक्तानी रसिद काट्नुहोस्
+                        </button>
+                    </div>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-blue-600">
-                        <div class="text-xs font-semibold text-slate-500">कुल सदस्य</div>
+                        <div class="text-xs font-semibold text-slate-500">कुल सदस्य संख्या</div>
                         <div class="text-2xl font-extrabold text-slate-800 mt-1" id="kpi-members">०</div>
+                        <div class="text-xs text-blue-600 mt-1"><i class="fas fa-users mr-1"></i>सक्रिय धारा जडान</div>
                     </div>
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-amber-500">
                         <div class="text-xs font-semibold text-slate-500">उठ्न बाँकी बक्यौता</div>
                         <div class="text-2xl font-extrabold text-amber-600 mt-1" id="kpi-dues">रु. ०</div>
+                        <div class="text-xs text-slate-500 mt-1">पानी महसुल बाँकी</div>
                     </div>
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-600">
                         <div class="text-xs font-semibold text-slate-500">कुल आम्दानी</div>
                         <div class="text-2xl font-extrabold text-emerald-600 mt-1" id="kpi-income">रु. ०</div>
+                        <div class="text-xs text-slate-500 mt-1">सबै शीर्षक समेत</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-rose-600">
+                        <div class="text-xs font-semibold text-slate-500">कुल खर्च</div>
+                        <div class="text-2xl font-extrabold text-rose-600 mt-1" id="kpi-expense">रु. ०</div>
+                        <div class="text-xs text-slate-500 mt-1">सबै शीर्षक समेत</div>
                     </div>
                     <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-purple-600">
-                        <div class="text-xs font-semibold text-slate-500">लगानी ऋण</div>
+                        <div class="text-xs font-semibold text-slate-500">लगानीमा रहेको ऋण</div>
                         <div class="text-2xl font-extrabold text-purple-600 mt-1" id="kpi-loan">रु. ०</div>
+                        <div class="text-xs text-slate-500 mt-1">बाँकी साँवा रकम</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-teal-600">
+                        <div class="text-xs font-semibold text-slate-500">नगद + बैंक मौज्दात</div>
+                        <div class="text-2xl font-extrabold text-teal-700 mt-1" id="kpi-cash-bank">रु. ०</div>
+                        <div class="text-xs text-slate-500 mt-1" id="kpi-cash-bank-split">नगद: ० | बैंक: ०</div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-chart-bar text-blue-600"></i> शीर्षकगत आम्दानी र खर्च तुलनात्मक विवरण
+                        </h3>
+                        <div class="h-72">
+                            <canvas id="financeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+                        <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                            <i class="fas fa-history text-emerald-600"></i> हालैका कारोबारहरू
+                        </h3>
+                        <div id="recent-activities" class="flex-1 overflow-y-auto space-y-2.5 max-h-72 pr-1 text-sm"></div>
                     </div>
                 </div>
             </section>
@@ -126,15 +223,122 @@
             <!-- 2. MONTHLY METER READING ENTRY -->
             <section id="tab-reading" class="tab-section hidden space-y-6">
                 <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <h2 class="text-xl font-bold text-slate-800 mb-4"><i class="fas fa-tachometer-alt text-blue-600 mr-2"></i>मासिक मिटर रिडिङ इन्ट्री</h2>
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 mb-5 gap-2">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-tachometer-alt text-blue-600 mr-2"></i>मासिक मिटर रिडिङ अङ्क इन्ट्री</h2>
+                            <p class="text-xs text-slate-500">रिडिङ महिनाको अन्तिम मिति स्वतः कायम हुन्छ र १० दिनपछि २०% जरिमाना लाग्छ</p>
+                        </div>
+                        <span class="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg font-semibold border border-blue-200" id="tariff-info-badge">
+                            न्यूनतम ६ युनिट: रु. २५० | अतिरिक्त: रु. १४०/युनिट
+                        </span>
+                    </div>
+
                     <form id="reading-form" onsubmit="saveMeterReading(event)" class="grid grid-cols-1 md:grid-cols-3 gap-5">
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1">मसान्त मिति</label>
-                            <input type="text" id="read-date" required class="w-full px-3.5 py-2.5 bg-slate-50 border rounded-xl font-bold">
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">मसान्त मिति (महिनाको अन्तिम)</label>
+                            <input type="text" id="read-date" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-blue-700">
                         </div>
+
                         <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1">महिना</label>
-                            <select id="read-month" class="w-full px-3.5 py-2.5 bg-white border rounded-xl">
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">रिडिङ महिना</label>
+                            <select id="read-month" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="बैशाख">बैशाख</option>
+                                <option value="जेठ">जेठ</option>
+                                <option value="असार">असार</option>
+                                <option value="श्रावण">श्रावण</option>
+                                <option value="भदौ">भदौ</option>
+                                <option value="असोज">असोज</option>
+                                <option value="कार्तिक" selected>कार्तिक</option>
+                                <option value="मंसिर">मंसिर</option>
+                                <option value="पुष">पुष</option>
+                                <option value="माघ">माघ</option>
+                                <option value="फाल्गुन">फाल्गुन</option>
+                                <option value="चैत्र">चैत्र</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">सदस्य छान्नुहोस् (नाम / मिटर नं.)</label>
+                            <select id="read-member" onchange="onSelectReadingMember()" required class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl">
+                                <option value="">-- सदस्य छान्नुहोस् --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">अघिल्लो मिटर अङ्क (Previous)</label>
+                            <input type="number" step="0.01" id="read-prev" readonly class="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-300 rounded-xl font-bold text-slate-600">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">हालको मिटर अङ्क (Current) *</label>
+                            <input type="number" step="0.01" id="read-curr" oninput="calculateReadingBill()" required placeholder="नयाँ अङ्क हाल्नुहोस्" class="w-full px-3.5 py-2.5 bg-white border-2 border-blue-400 rounded-xl font-bold text-lg text-slate-900">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">खपत युनिट (Consumed Units)</label>
+                            <input type="number" step="0.01" id="read-units" readonly class="w-full px-3.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl font-extrabold text-blue-800">
+                        </div>
+
+                        <div class="md:col-span-3 bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div>
+                                <span class="text-xs text-slate-500 block">चालु महिनाको महसुल</span>
+                                <span class="text-lg font-bold text-slate-800" id="calc-current-charge">रु. ०.००</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-500 block">अघिल्लो बाँकी बक्यौता</span>
+                                <span class="text-lg font-bold text-amber-600" id="calc-prev-due">रु. ०.००</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-500 block">स्वचालित जरिमाना (20%)</span>
+                                <span class="text-lg font-bold text-rose-600" id="calc-fine">रु. ०.००</span>
+                            </div>
+                            <div class="bg-blue-600 text-white p-2.5 rounded-xl">
+                                <span class="text-xs text-blue-100 block">कुल तिर्नुपर्ने जम्मा रकम</span>
+                                <span class="text-xl font-extrabold" id="calc-grand-total">रु. ०.००</span>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-3 flex justify-end gap-3 pt-2">
+                            <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition flex items-center gap-2">
+                                <i class="fas fa-save"></i> रिडिङ सेभ गर्नुहोस्
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-3">हालै गरिएका मिटर रिडिङ सूची</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                                    <th class="p-3">मिति (मसान्त)</th>
+                                    <th class="p-3">महिना</th>
+                                    <th class="p-3">सदस्यको नाम</th>
+                                    <th class="p-3">अघिल्लो/हालको</th>
+                                    <th class="p-3">युनिट</th>
+                                    <th class="p-3">महसुल</th>
+                                    <th class="p-3">जरिमाना</th>
+                                    <th class="p-3">कुल बिल</th>
+                                    <th class="p-3 text-center">कार्य</th>
+                                </tr>
+                            </thead>
+                            <tbody id="readings-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 2.1 BULK METER READING -->
+            <section id="tab-bulk-reading" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 mb-5 gap-2">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-list-check text-cyan-600 mr-2"></i>एकैसाथ बल्क मिटर रिडिङ इन्ट्री (Bulk Reading)</h2>
+                            <p class="text-xs text-slate-500">सबै सदस्यहरूको हालको मिटर अङ्क एकैपटक भरेर एकैक्लिकमा सेभ गर्नुहोस्</p>
+                        </div>
+                        <div class="flex gap-2">
+                            <select id="bulk-read-month" class="px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm font-semibold">
                                 <option value="कार्तिक" selected>कार्तिक</option>
                                 <option value="मंसिर">मंसिर</option>
                                 <option value="पुष">पुष</option>
@@ -148,56 +352,25 @@
                                 <option value="भदौ">भदौ</option>
                                 <option value="असोज">असोज</option>
                             </select>
+                            <button onclick="saveBulkReadings()" class="px-5 py-2 bg-cyan-600 hover:bg-cyan-700 text-white rounded-xl font-bold text-sm shadow-md transition">
+                                <i class="fas fa-save mr-1.5"></i>सबै सेभ गर्नुहोस्
+                            </button>
                         </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1">सदस्य छान्नुहोस्</label>
-                            <select id="read-member" onchange="onSelectReadingMember()" required class="w-full px-3.5 py-2.5 bg-white border rounded-xl">
-                                <option value="">-- सदस्य छान्नुहोस् --</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1">अघिल्लो अङ्क</label>
-                            <input type="number" step="0.01" id="read-prev" readonly class="w-full px-3.5 py-2.5 bg-slate-100 border rounded-xl font-bold">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1">हालको अङ्क *</label>
-                            <input type="number" step="0.01" id="read-curr" oninput="calculateReadingBill()" required class="w-full px-3.5 py-2.5 border-2 border-blue-400 rounded-xl font-bold">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-semibold text-slate-700 mb-1">खपत युनिट</label>
-                            <input type="number" step="0.01" id="read-units" readonly class="w-full px-3.5 py-2.5 bg-blue-50 border rounded-xl font-bold text-blue-800">
-                        </div>
-                        <div class="md:col-span-3 bg-slate-50 p-4 rounded-xl border flex justify-between items-center">
-                            <div>
-                                <span class="text-xs text-slate-500 block">कुल बिल (जरिमाना सहित):</span>
-                                <span class="text-2xl font-extrabold text-blue-700" id="calc-grand-total">रु. ०.००</span>
-                            </div>
-                            <button type="submit" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl shadow">सेभ गर्नुहोस्</button>
-                        </div>
-                    </form>
-                </div>
-            </section>
-
-            <!-- 2.1 BULK METER READING -->
-            <section id="tab-bulk-reading" class="tab-section hidden space-y-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-list-check text-cyan-600 mr-2"></i>बल्क मिटर रिडिङ</h2>
-                        <button onclick="saveBulkReadings()" class="px-5 py-2 bg-cyan-600 text-white rounded-xl font-bold text-sm">सबै सेभ गर्नुहोस्</button>
                     </div>
+
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left border-collapse">
                             <thead>
-                                <tr class="bg-slate-100 border-b">
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
                                     <th class="p-3">मिटर नं.</th>
-                                    <th class="p-3">नाम</th>
+                                    <th class="p-3">सदस्यको नाम</th>
                                     <th class="p-3">अघिल्लो अङ्क</th>
-                                    <th class="p-3">हालको अङ्क</th>
+                                    <th class="p-3">हालको अङ्क (Current)</th>
                                     <th class="p-3">युनिट</th>
-                                    <th class="p-3">कुल महसुल</th>
+                                    <th class="p-3">महसुल (रु)</th>
                                 </tr>
                             </thead>
-                            <tbody id="bulk-reading-tbody" class="divide-y"></tbody>
+                            <tbody id="bulk-reading-tbody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
@@ -206,66 +379,131 @@
             <!-- 3. PAYMENT RECEIPT -->
             <section id="tab-receipt" class="tab-section hidden space-y-6">
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border">
-                        <h2 class="text-xl font-bold text-slate-800 mb-4"><i class="fas fa-receipt text-emerald-600 mr-2"></i>भुक्तानी रसिद</h2>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
+                            <i class="fas fa-receipt text-emerald-600 mr-2"></i>भुक्तानी रसिद (Payment Receipt Entry)
+                        </h2>
                         <form id="payment-form" onsubmit="savePaymentReceipt(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1">रसिद मिति</label>
+                                    <input type="text" id="pay-date" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-emerald-700">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1">भुक्तानी माध्यम</label>
+                                    <select id="pay-mode" onchange="toggleBankSelect('pay-mode', 'pay-bank-div')" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl">
+                                        <option value="नगद (Cash)">नगद (Cash)</option>
+                                        <option value="बैंक / QR (Bank)">बैंक / QR (Bank)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="pay-bank-div" class="hidden">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">बैंक खाता छान्नुहोस्</label>
+                                <select id="pay-bank-id" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl"></select>
+                            </div>
+
                             <div>
-                                <label class="block text-sm font-semibold mb-1">सदस्य छान्नुहोस् *</label>
-                                <select id="pay-member" onchange="onSelectPaymentMember()" required class="w-full px-3.5 py-2.5 border rounded-xl"></select>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">सदस्य छान्नुहोस् *</label>
+                                <select id="pay-member" onchange="onSelectPaymentMember()" required class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl">
+                                    <option value="">-- सदस्य छान्नुहोस् --</option>
+                                </select>
                             </div>
-                            <div class="bg-amber-50 p-3 rounded-xl border flex justify-between items-center">
-                                <span class="text-sm font-bold text-amber-800">बाँकी बक्यौता:</span>
-                                <span class="text-xl font-extrabold text-amber-700" id="pay-current-due">रु. ०.००</span>
+
+                            <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 flex justify-between items-center">
+                                <div>
+                                    <span class="text-xs text-amber-800 block">सदस्यको तिर्न बाँकी कुल बक्यौता:</span>
+                                    <span class="text-2xl font-extrabold text-amber-700" id="pay-current-due">रु. ०.००</span>
+                                </div>
+                                <button type="button" onclick="fillFullDue()" class="px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700">
+                                    पूरा रकम भर्नुहोस्
+                                </button>
                             </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1">बुझाएको रकम (Paid Amount) *</label>
+                                    <input type="number" step="0.01" id="pay-amount" required class="w-full px-3.5 py-2.5 border-2 border-emerald-500 rounded-xl font-bold text-lg text-emerald-800">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1">छुट रकम (Discount)</label>
+                                    <input type="number" step="0.01" id="pay-discount" value="0" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl">
+                                </div>
+                            </div>
+
                             <div>
-                                <label class="block text-sm font-semibold mb-1">बुझाउने रकम *</label>
-                                <input type="number" step="0.01" id="pay-amount" required class="w-full px-3.5 py-2.5 border-2 border-emerald-500 rounded-xl font-bold text-lg">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">कैफियत (Remarks)</label>
+                                <input type="text" id="pay-remarks" placeholder="पानी महसुल भुक्तानी..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl">
                             </div>
-                            <button type="submit" class="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl shadow">रसिद सुरक्षित र प्रिन्ट गर्नुहोस्</button>
+
+                            <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition">
+                                <i class="fas fa-check-circle mr-1.5"></i>भुक्तानी रसिद सुरक्षित र प्रिन्ट गर्नुहोस्
+                            </button>
                         </form>
                     </div>
-                    <div class="bg-white p-6 rounded-2xl shadow-sm border flex flex-col justify-between">
-                        <div id="receipt-preview-box" class="border-2 border-dashed p-5 rounded-xl bg-slate-50 text-center text-slate-400 py-20">
-                            रसिद प्रिन्ट प्रिभ्यू यहाँ देखिनेछ
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                        <div id="receipt-preview-box" class="border-2 border-dashed border-slate-300 p-5 rounded-xl bg-slate-50/50">
+                            <div class="text-center text-slate-400 py-16">
+                                <i class="fas fa-print text-4xl mb-2"></i>
+                                <p>भुक्तानी सेभ गरेपछि यहाँ आधिकारिक रसिद देखिनेछ</p>
+                            </div>
                         </div>
-                        <button onclick="printElement('receipt-preview-box')" class="mt-4 py-2.5 bg-slate-800 text-white font-semibold rounded-xl">रसिद प्रिन्ट गर्नुहोस्</button>
+                        <button onclick="printElement('receipt-preview-box')" class="mt-4 w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-xl transition">
+                            <i class="fas fa-print mr-2"></i>रसिद प्रिन्ट गर्नुहोस् (Print Receipt)
+                        </button>
                     </div>
                 </div>
             </section>
 
-            <!-- 3.1 BULK PAYMENT -->
+            <!-- 3.1 BULK PAYMENT RECEIPT -->
             <section id="tab-bulk-receipt" class="tab-section hidden space-y-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold text-slate-800">बल्क भुक्तानी संकलन</h2>
-                        <button onclick="saveBulkPayments()" class="px-5 py-2 bg-emerald-600 text-white rounded-xl font-bold text-sm">सबै सेभ गर्नुहोस्</button>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 mb-5 gap-2">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-file-invoice-dollar text-emerald-600 mr-2"></i>एकैसाथ बल्क भुक्तानी रसिद (Bulk Payment)</h2>
+                            <p class="text-xs text-slate-500">धेरै सदस्यहरूको संकलन रकम एकैपटक प्रविष्ट गरी रसिद काट्नुहोस्</p>
+                        </div>
+                        <button onclick="saveBulkPayments()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-sm shadow-md transition">
+                            <i class="fas fa-save mr-1.5"></i>सबै भुक्तानी सेभ गर्नुहोस्
+                        </button>
                     </div>
+
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm text-left border-collapse">
                             <thead>
-                                <tr class="bg-slate-100 border-b">
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
                                     <th class="p-3">मिटर नं.</th>
-                                    <th class="p-3">नाम</th>
-                                    <th class="p-3">बाँकी बक्यौता</th>
-                                    <th class="p-3">बुझाउने रकम</th>
+                                    <th class="p-3">सदस्यको नाम</th>
+                                    <th class="p-3">बाँकी बक्यौता (रु)</th>
+                                    <th class="p-3">बुझाउने रकम (रु)</th>
+                                    <th class="p-3">छुट (रु)</th>
                                 </tr>
                             </thead>
-                            <tbody id="bulk-payment-tbody" class="divide-y"></tbody>
+                            <tbody id="bulk-payment-tbody" class="divide-y divide-slate-100"></tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- 4. STATEMENT -->
+            <!-- 4. READING BILL & MEMBER STATEMENT (Including Loan Statement Search) -->
             <section id="tab-statement" class="tab-section hidden space-y-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border">
-                    <div class="flex justify-between items-center mb-4">
-                        <select id="stmt-member" onchange="renderMemberStatement()" class="w-96 px-3.5 py-2.5 border rounded-xl font-medium">
-                            <option value="">-- सदस्य छान्नुहोस् --</option>
-                        </select>
-                        <button onclick="printElement('member-statement-print')" class="px-4 py-2 bg-blue-600 text-white rounded-xl font-semibold">स्टेटमेन्ट प्रिन्ट गर्नुहोस्</button>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-100 pb-4 mb-5">
+                        <div class="flex-1">
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">सदस्य छान्नुहोस् (मेम्बरवाइज स्टेटमेन्ट, रिडिङ बिल र ऋण विवरण)</label>
+                            <select id="stmt-member" onchange="renderMemberStatement()" class="w-full md:w-96 px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl font-medium">
+                                <option value="">-- सदस्य छान्नुहोस् --</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="printElement('member-statement-print')" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm shadow-sm">
+                                <i class="fas fa-print mr-1.5"></i>लोगो सहित स्टेटमेन्ट प्रिन्ट गर्नुहोस्
+                            </button>
+                        </div>
                     </div>
-                    <div id="member-statement-print" class="bg-white p-4 rounded-xl space-y-4">
+
+                    <div id="member-statement-print" class="bg-white p-4 rounded-xl space-y-6">
                         <div id="stmt-org-header"></div>
                         <div id="stmt-member-info"></div>
                         <div id="stmt-water-section"></div>
@@ -274,118 +512,344 @@
                 </div>
             </section>
 
-            <!-- 5. MEMBERS -->
+            <!-- 5. MEMBERS & KYC -->
             <section id="tab-members" class="tab-section hidden space-y-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border">
-                    <div class="flex justify-between items-center mb-4">
-                        <h2 class="text-xl font-bold">सदस्य मास्टर डाटाबेस</h2>
-                        <button onclick="openMemberModal()" class="px-4 py-2 bg-indigo-600 text-white font-semibold rounded-xl text-sm">नयाँ सदस्य थप्नुहोस्</button>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 mb-5 gap-3">
+                        <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-users text-indigo-600 mr-2"></i>सदस्य मास्टर डाटाबेस र KYC फारम</h2>
+                        <button onclick="openMemberModal()" class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-xl text-sm shadow-sm transition">
+                            <i class="fas fa-user-plus mr-1.5"></i>नयाँ सदस्य थप्नुहोस्
+                        </button>
                     </div>
-                    <table class="w-full text-sm text-left">
-                        <thead><tr class="bg-slate-100 border-b"><th class="p-3">मिटर नं.</th><th class="p-3">नाम</th><th class="p-3">मोबाइल</th><th class="p-3">ठेगाना</th></tr></thead>
-                        <tbody id="members-table-body" class="divide-y"></tbody>
-                    </table>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                                    <th class="p-3">मिटर नं.</th>
+                                    <th class="p-3">नाम</th>
+                                    <th class="p-3">मोबाइल नं.</th>
+                                    <th class="p-3">ठेगाना</th>
+                                    <th class="p-3">प्रारम्भिक बक्यौता</th>
+                                    <th class="p-3 text-center">कार्य</th>
+                                </tr>
+                            </thead>
+                            <tbody id="members-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 6. INCOME -->
+            <section id="tab-income" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4"><i class="fas fa-arrow-down-left-and-arrow-up-right-to-center text-green-600 mr-2"></i>आम्दानी इन्ट्री</h2>
+                    <form id="income-form" onsubmit="saveIncome(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">मिति</label>
+                            <input type="text" id="inc-date" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">शीर्षक</label>
+                            <select id="inc-source" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl">
+                                <option value="धारा जडान शुल्क">धारा जडान शुल्क</option>
+                                <option value="नयाँ सदस्यता शुल्क">नयाँ सदस्यता शुल्क</option>
+                                <option value="अन्य आम्दानी">अन्य आम्दानी</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">रकम (रु)</label>
+                            <input type="number" step="0.01" id="inc-amount" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">विवरण</label>
+                            <input type="text" id="inc-desc" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl" placeholder="विवरण...">
+                        </div>
+                        <div class="md:col-span-4 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl shadow-md">आम्दानी सेभ गर्नुहोस्</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 7. EXPENSE -->
+            <section id="tab-expense" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4"><i class="fas fa-money-bill-wave text-rose-600 mr-2"></i>खर्च इन्ट्री</h2>
+                    <form id="expense-form" onsubmit="saveExpense(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">मिति</label>
+                            <input type="text" id="exp-date" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">खर्च शीर्षक</label>
+                            <select id="exp-category" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl">
+                                <option value="कार्यालय संचालन खर्च">कार्यालय संचालन खर्च</option>
+                                <option value="मर्मत सम्भार खर्च">मर्मत सम्भार खर्च</option>
+                                <option value="कर्मचारी तलब">कर्मचारी तलब</option>
+                                <option value="अन्य खर्च">अन्य खर्च</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">रकम (रु)</label>
+                            <input type="number" step="0.01" id="exp-amount" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">विवरण</label>
+                            <input type="text" id="exp-desc" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl" placeholder="विवरण...">
+                        </div>
+                        <div class="md:col-span-4 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-md">खर्च सेभ गर्नुहोस्</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 8. TANKER -->
+            <section id="tab-tanker" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4"><i class="fas fa-truck-droplet text-sky-600 mr-2"></i>ट्याङ्कर पानी बिक्री र ज्याला</h2>
+                    <form id="tanker-form" onsubmit="saveTanker(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">मिति</label>
+                            <input type="text" id="tank-date" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">ग्राहकको नाम</label>
+                            <input type="text" id="tank-client" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl" placeholder="ग्राहकको नाम">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">ट्याङ्कर संख्या</label>
+                            <input type="number" id="tank-qty" value="1" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">कुल रकम (रु)</label>
+                            <input type="number" step="0.01" id="tank-amount" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div class="md:col-span-4 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-md">ट्याङ्कर बिक्री सेभ गर्नुहोस्</button>
+                        </div>
+                    </form>
                 </div>
             </section>
 
             <!-- 9. LOAN -->
             <section id="tab-loan" class="tab-section hidden space-y-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border">
-                    <h2 class="text-xl font-bold mb-4">सहकारी ऋण इन्ट्री</h2>
-                    <form id="loan-form" onsubmit="saveLoan(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div><label class="block text-sm font-semibold mb-1">सदस्य</label><select id="loan-member" required class="w-full p-2.5 border rounded-xl"></select></div>
-                        <div><label class="block text-sm font-semibold mb-1">साँवा रकम</label><input type="number" step="0.01" id="loan-principal" required class="w-full p-2.5 border rounded-xl font-bold"></div>
-                        <div><label class="block text-sm font-semibold mb-1">ब्याज दर (%)</label><input type="number" step="0.01" id="loan-rate" value="12" required class="w-full p-2.5 border rounded-xl"></div>
-                        <div class="md:col-span-3 flex justify-end"><button type="submit" class="px-6 py-2.5 bg-purple-600 text-white font-bold rounded-xl">ऋण सेभ गर्नुहोस्</button></div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4"><i class="fas fa-hand-holding-usd text-purple-600 mr-2"></i>सहकारी ऋण इन्ट्री र व्यवस्थापन</h2>
+                    <form id="loan-form" onsubmit="saveLoan(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">सदस्य छान्नुहोस्</label>
+                            <select id="loan-member" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">ऋण रकम (साँवा)</label>
+                            <input type="number" step="0.01" id="loan-principal" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">ब्याज दर (%)</label>
+                            <input type="number" step="0.01" id="loan-rate" value="12" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">मिति</label>
+                            <input type="text" id="loan-date" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div class="md:col-span-4 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-md">ऋण लगानी सेभ गर्नुहोस्</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-3">लगानीमा रहेका ऋणहरूको सूची</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                                    <th class="p-3">मिति</th>
+                                    <th class="p-3">सदस्यको नाम</th>
+                                    <th class="p-3">ऋण रकम (साँवा)</th>
+                                    <th class="p-3">ब्याज दर</th>
+                                    <th class="p-3 text-center">कार्य</th>
+                                </tr>
+                            </thead>
+                            <tbody id="loan-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 10. BANK -->
+            <section id="tab-bank" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4"><i class="fas fa-university text-teal-600 mr-2"></i>बैंक खाता व्यवस्थापन र भौचर इन्ट्री</h2>
+                    <form id="bank-form" onsubmit="saveBankDeposit(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">बैंक खाता</label>
+                            <select id="bank-acc-select" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl"></select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">कारोबारको प्रकार</label>
+                            <select id="bank-type" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl">
+                                <option value="जम्मा (Deposit)">जम्मा (Deposit)</option>
+                                <option value="झिकिएको (Withdrawal)">झिकिएको (Withdrawal)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">रकम (रु)</label>
+                            <input type="number" step="0.01" id="bank-amount" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">मिति</label>
+                            <input type="text" id="bank-date" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div class="md:col-span-4 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl shadow-md">बैंक भौचर सेभ गर्नुहोस्</button>
+                        </div>
+                    </form>
+                </div>
+            </section>
+
+            <!-- 11. PAYROLL -->
+            <section id="tab-payroll" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4"><i class="fas fa-user-tie text-orange-600 mr-2"></i>कर्मचारी पेरोल (Payroll)</h2>
+                    <form id="payroll-form" onsubmit="savePayroll(event)" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">कर्मचारीको नाम</label>
+                            <input type="text" id="pay-emp-name" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl" placeholder="नाम">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">पद</label>
+                            <input type="text" id="pay-emp-role" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl" placeholder="पद">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">तलब रकम (रु)</label>
+                            <input type="number" step="0.01" id="pay-emp-salary" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">मिति</label>
+                            <input type="text" id="pay-emp-date" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div class="md:col-span-4 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl shadow-md">तलब भुक्तानी सेभ गर्नुहोस्</button>
+                        </div>
                     </form>
                 </div>
             </section>
 
             <!-- 12. REPORTS -->
             <section id="tab-reports" class="tab-section hidden space-y-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border">
-                    <h2 class="text-xl font-bold mb-4">वित्तीय प्रतिवेदन</h2>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="p-4 bg-slate-50 rounded-xl border" id="report-pnl"></div>
-                        <div class="p-4 bg-slate-50 rounded-xl border" id="report-bs"></div>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-4">
+                        <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-balance-scale text-yellow-600 mr-2"></i>वासलात, नाफा-नोक्सान र ट्रायल ब्यालेन्स</h2>
+                        <button onclick="printElement('reports-print-area')" class="px-4 py-2 bg-slate-800 text-white rounded-xl text-sm font-semibold">
+                            <i class="fas fa-print mr-1.5"></i>प्रिन्ट गर्नुहोस्
+                        </button>
+                    </div>
+                    <div id="reports-print-area" class="space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                <h3 class="font-bold text-slate-800 mb-2">नाफा नोक्सान विवरण (P&L Summary)</h3>
+                                <div id="report-pnl" class="space-y-1 text-sm"></div>
+                            </div>
+                            <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                                <h3 class="font-bold text-slate-800 mb-2">वासलात (Balance Sheet)</h3>
+                                <div id="report-bs" class="space-y-1 text-sm"></div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- 13. SETTINGS & CODE UPDATE MANAGER -->
+            <!-- 13. SETTINGS & BACKUP -->
             <section id="tab-settings" class="tab-section hidden space-y-6">
-                <div class="bg-white p-6 rounded-2xl shadow-sm border space-y-6">
-                    <h2 class="text-xl font-bold border-b pb-3"><i class="fas fa-cogs mr-2"></i>मास्टर सेटिङ र लाइभ कन्फिगरेसन</h2>
-                    
-                    <!-- Organization Settings -->
-                    <form onsubmit="saveOrgSettings(event)" class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border">
-                        <h3 class="md:col-span-2 font-bold text-blue-700">१. संस्थाको विवरण परिवर्तन</h3>
-                        <div><label class="text-sm font-semibold">संस्थाको नाम</label><input type="text" id="set-org-name" required class="w-full p-2.5 border rounded-xl bg-white"></div>
-                        <div><label class="text-sm font-semibold">ठेगाना</label><input type="text" id="set-org-address" required class="w-full p-2.5 border rounded-xl bg-white"></div>
-                        <div><label class="text-sm font-semibold">फोन नम्बर</label><input type="text" id="set-org-phone" required class="w-full p-2.5 border rounded-xl bg-white"></div>
-                        <div><label class="text-sm font-semibold">लोगो URL</label><input type="text" id="set-org-logo" required class="w-full p-2.5 border rounded-xl bg-white"></div>
-                        <div class="md:col-span-2 flex justify-end"><button type="submit" class="px-5 py-2 bg-blue-600 text-white font-bold rounded-xl text-sm">संस्थाको नाम सेभ गर्नुहोस्</button></div>
-                    </form>
-
-                    <!-- Tariff Rules Settings -->
-                    <form onsubmit="saveTariffSettings(event)" class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-slate-50 p-4 rounded-xl border">
-                        <h3 class="md:col-span-3 font-bold text-emerald-700">२. पानी महसुल नियम (Tariff Rules)</h3>
-                        <div><label class="text-sm font-semibold">न्यूनतम युनिट</label><input type="number" id="set-min-units" value="6" required class="w-full p-2.5 border rounded-xl bg-white"></div>
-                        <div><label class="text-sm font-semibold">न्यूनतम महसुल (रु)</label><input type="number" id="set-min-charge" value="250" required class="w-full p-2.5 border rounded-xl bg-white"></div>
-                        <div><label class="text-sm font-semibold">अतिरिक्त प्रति युनिट दर (रु)</label><input type="number" id="set-extra-rate" value="140" required class="w-full p-2.5 border rounded-xl bg-white"></div>
-                        <div class="md:col-span-3 flex justify-end"><button type="submit" class="px-5 py-2 bg-emerald-600 text-white font-bold rounded-xl text-sm">महसुल नियम सेभ गर्नुहोस्</button></div>
-                    </form>
-
-                    <!-- Backup & System Reset -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-2">
-                        <button onclick="exportFullBackup()" class="p-4 bg-emerald-600 text-white font-bold rounded-xl shadow text-center">पूर्ण ब्याकअप डाउनलोड (JSON)</button>
-                        <label class="p-4 bg-blue-600 text-white font-bold rounded-xl shadow text-center cursor-pointer">डेटा रिस्टोर गर्नुहोस्<input type="file" id="import-file" onchange="importFullBackup(event)" class="hidden" accept=".json"></label>
-                        <button onclick="resetAllData()" class="p-4 bg-rose-600 text-white font-bold rounded-xl shadow text-center">सबै डेटा रिसेट गर्नुहोस्</button>
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3"><i class="fas fa-cogs text-slate-700 mr-2"></i>मास्टर सेटिङ र डेटा ब्याकअप</h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <button onclick="exportFullBackup()" class="p-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold text-center shadow transition">
+                            <i class="fas fa-download text-2xl mb-2 block"></i>पूर्ण ब्याकअप डाउनलोड (JSON)
+                        </button>
+                        <label class="p-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-center shadow transition cursor-pointer">
+                            <i class="fas fa-upload text-2xl mb-2 block"></i>ब्याकअप रिस्टोर गर्नुहोस्
+                            <input type="file" id="import-file" onchange="importFullBackup(event)" class="hidden" accept=".json">
+                        </label>
+                        <button onclick="resetAllData()" class="p-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold text-center shadow transition">
+                            <i class="fas fa-trash-alt text-2xl mb-2 block"></i>सबै डेटा रिसेट गर्नुहोस्
+                        </button>
                     </div>
                 </div>
             </section>
+
         </main>
     </div>
 
     <!-- Member Modal -->
     <div id="member-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-xl">
-            <h3 class="text-lg font-bold mb-4">नयाँ सदस्य थप्नुहोस्</h3>
+            <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-4">नयाँ सदस्य थप्नुहोस्</h3>
             <form id="member-form" onsubmit="saveMember(event)" class="space-y-4">
-                <div><label class="block text-sm font-semibold mb-1">मिटर नं. *</label><input type="text" id="mem-meter" required class="w-full p-2.5 border rounded-xl font-bold"></div>
-                <div><label class="block text-sm font-semibold mb-1">पूरा नाम *</label><input type="text" id="mem-name" required class="w-full p-2.5 border rounded-xl"></div>
-                <div><label class="block text-sm font-semibold mb-1">मोबाइल नम्बर</label><input type="text" id="mem-phone" class="w-full p-2.5 border rounded-xl"></div>
-                <div><label class="block text-sm font-semibold mb-1">ठेगाना</label><input type="text" id="mem-address" value="नमोबुद्धा १०, पुरानागाउँ" class="w-full p-2.5 border rounded-xl"></div>
-                <div class="flex justify-end gap-3 pt-2">
-                    <button type="button" onclick="closeMemberModal()" class="px-4 py-2 bg-slate-200 rounded-xl">रद्द गर्ने</button>
-                    <button type="submit" class="px-5 py-2 bg-indigo-600 text-white font-bold rounded-xl">सेभ गर्नुहोस्</button>
+                <input type="hidden" id="mem-edit-id">
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">मिटर नं. *</label>
+                    <input type="text" id="mem-meter" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl font-bold">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">सदस्यको पूरा नाम *</label>
+                    <input type="text" id="mem-name" required class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">मोबाइल नम्बर</label>
+                    <input type="text" id="mem-phone" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">ठेगाना</label>
+                    <input type="text" id="mem-address" value="नमोबुद्धा १०, पुरानागाउँ" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1">प्रारम्भिक बक्यौता (Opening Due)</label>
+                    <input type="number" step="0.01" id="mem-due" value="0" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl font-bold">
+                </div>
+                <div class="flex justify-end gap-3 pt-3">
+                    <button type="button" onclick="closeMemberModal()" class="px-4 py-2 bg-slate-200 text-slate-700 font-semibold rounded-xl">रद्द गर्ने</button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow">सेभ गर्नुहोस्</button>
                 </div>
             </form>
         </div>
     </div>
 
     <script>
+        // Default LocalStorage Database Init
         let db = JSON.parse(localStorage.getItem('khanepani_erp_db')) || {
             org: { name: "पुरानागाउँ खानेपानी तथा सहकारी", address: "नमोबुद्धा नपा १०, पुरानागाउँ, काभ्रे", phone: "9800000000", logo: "https://placehold.co/48x48/2563eb/ffffff?text=खा" },
-            tariff: { minUnits: 6, minCharge: 250, extraRate: 140 },
             members: [
                 { id: "1", meterNo: "101", name: "राम बहादुर श्रेष्ठ", phone: "9841000000", address: "पुरानागाउँ", openingDue: 500 },
                 { id: "2", meterNo: "102", name: "सीता देवी तिमल्सिना", phone: "9851000000", address: "पुरानागाउँ", openingDue: 0 }
             ],
-            readings: [], payments: [], income: [], expense: [], tanker: [], loans: [],
-            bankAccounts: [{ id: "b1", name: "Laxmi Sunrise Bank", balance: 50000 }], bankTx: [], payroll: []
+            readings: [],
+            payments: [],
+            income: [],
+            expense: [],
+            tanker: [],
+            loans: [],
+            bankAccounts: [{ id: "b1", name: "Laxmi Sunrise Bank (001)", balance: 50000 }],
+            bankTx: [],
+            payroll: []
         };
 
-        if(!db.tariff) db.tariff = { minUnits: 6, minCharge: 250, extraRate: 140 };
+        function saveDB() {
+            localStorage.setItem('khanepani_erp_db', JSON.stringify(db));
+        }
 
-        function saveDB() { localStorage.setItem('khanepani_erp_db', JSON.stringify(db)); }
         function showToast(msg, type = 'success') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            toast.className = `px-4 py-3 rounded-xl text-white font-semibold shadow-lg text-sm ${type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'}`;
-            toast.innerText = msg;
+            toast.className = `px-4 py-3 rounded-xl text-white font-semibold shadow-lg text-sm transition transform translate-y-2 opacity-0 flex items-center gap-2 ${type === 'success' ? 'bg-emerald-600' : 'bg-rose-600'}`;
+            toast.innerHTML = `<i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'}"></i> <span>${msg}</span>`;
             container.appendChild(toast);
-            setTimeout(() => toast.remove(), 3000);
+            setTimeout(() => { toast.classList.remove('translate-y-2', 'opacity-0'); }, 50);
+            setTimeout(() => {
+                toast.classList.add('translate-y-2', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
         }
 
         function switchTab(tabId) {
@@ -393,7 +857,11 @@
             document.getElementById('tab-' + tabId).classList.remove('hidden');
             document.querySelectorAll('.nav-btn').forEach(btn => {
                 btn.classList.remove('bg-blue-600', 'text-white');
-                if(btn.dataset.tab === tabId) btn.classList.add('bg-blue-600', 'text-white');
+                btn.classList.add('text-slate-300', 'hover:bg-slate-800', 'hover:text-white');
+                if(btn.dataset.tab === tabId) {
+                    btn.classList.add('bg-blue-600', 'text-white');
+                    btn.classList.remove('text-slate-300', 'hover:bg-slate-800', 'hover:text-white');
+                }
             });
             if(tabId === 'dashboard') renderDashboard();
             if(tabId === 'reading') initReadingTab();
@@ -404,32 +872,45 @@
             if(tabId === 'members') renderMembersTable();
             if(tabId === 'loan') renderLoanTable();
             if(tabId === 'reports') renderReports();
-            if(tabId === 'settings') initSettingsTab();
+            if(window.innerWidth < 1024) toggleSidebar();
         }
 
         function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
-            document.getElementById('sidebar-backdrop').classList.toggle('hidden');
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
         }
 
+        // Calculation Helper: Min 6 units = 250, Extra = 140/unit + 20% fine after 10 days
         function calculateBillDetails(memberId, currentReading) {
             const member = db.members.find(m => m.id === memberId);
             if (!member) return { units: 0, charge: 0, prevDue: 0, fine: 0, grandTotal: 0, prevReading: 0 };
+
             const memberReadings = db.readings.filter(r => r.memberId === memberId);
-            let prevReading = memberReadings.length > 0 ? parseFloat(memberReadings[memberReadings.length - 1].currentReading) || 0 : 0;
+            let prevReading = 0;
+            if (memberReadings.length > 0) {
+                prevReading = parseFloat(memberReadings[memberReadings.length - 1].currentReading) || 0;
+            }
+
             let units = parseFloat(currentReading) - prevReading;
             if (units < 0) units = 0;
 
-            let tariff = db.tariff || { minUnits: 6, minCharge: 250, extraRate: 140 };
-            let charge = units <= tariff.minUnits ? tariff.minCharge : tariff.minCharge + (units - tariff.minUnits) * tariff.extraRate;
+            let charge = 0;
+            if (units <= 6) {
+                charge = 250;
+            } else {
+                charge = 250 + (units - 6) * 140;
+            }
 
             let totalPaid = db.payments.filter(p => p.memberId === memberId).reduce((s, p) => s + (parseFloat(p.amount) || 0) + (parseFloat(p.discount) || 0), 0);
             let totalBilled = db.readings.filter(r => r.memberId === memberId).reduce((s, r) => s + (parseFloat(r.grandTotal) || 0), 0);
             let prevDue = (member.openingDue || 0) + totalBilled - totalPaid;
             if(prevDue < 0) prevDue = 0;
 
-            let fine = charge * 0.20;
+            let fine = charge * 0.20; 
             let grandTotal = charge + prevDue + fine;
+
             return { units, charge, prevDue, fine, grandTotal, prevReading };
         }
 
@@ -437,7 +918,10 @@
             document.getElementById('read-date').value = "२०८३-०७-३०";
             const select = document.getElementById('read-member');
             select.innerHTML = '<option value="">-- सदस्य छान्नुहोस् --</option>';
-            db.members.forEach(m => select.innerHTML += `<option value="${m.id}">${m.name} (मिटर नं: ${m.meterNo})</option>`);
+            db.members.forEach(m => {
+                select.innerHTML += `<option value="${m.id}">${m.name} (मिटर नं: ${m.meterNo})</option>`;
+            });
+            renderReadingsTable();
         }
 
         function onSelectReadingMember() {
@@ -447,6 +931,9 @@
             document.getElementById('read-prev').value = details.prevReading;
             document.getElementById('read-curr').value = '';
             document.getElementById('read-units').value = '0';
+            document.getElementById('calc-current-charge').innerText = 'रु. 0.00';
+            document.getElementById('calc-prev-due').innerText = 'रु. ' + details.prevDue.toFixed(2);
+            document.getElementById('calc-fine').innerText = 'रु. 0.00';
             document.getElementById('calc-grand-total').innerText = 'रु. ' + details.prevDue.toFixed(2);
         }
 
@@ -454,46 +941,111 @@
             const memberId = document.getElementById('read-member').value;
             const curr = document.getElementById('read-curr').value;
             if (!memberId || curr === '') return;
+
             const res = calculateBillDetails(memberId, curr);
             document.getElementById('read-units').value = res.units.toFixed(2);
+            document.getElementById('calc-current-charge').innerText = 'रु. ' + res.charge.toFixed(2);
+            document.getElementById('calc-prev-due').innerText = 'रु. ' + res.prevDue.toFixed(2);
+            document.getElementById('calc-fine').innerText = 'रु. ' + res.fine.toFixed(2);
             document.getElementById('calc-grand-total').innerText = 'रु. ' + res.grandTotal.toFixed(2);
         }
 
         function saveMeterReading(e) {
             e.preventDefault();
             const memberId = document.getElementById('read-member').value;
+            const month = document.getElementById('read-month').value;
+            const date = document.getElementById('read-date').value;
             const curr = document.getElementById('read-curr').value;
             const res = calculateBillDetails(memberId, curr);
-            db.readings.push({
-                id: 'r_' + Date.now(), date: document.getElementById('read-date').value, month: document.getElementById('read-month').value,
-                memberId, prevReading: res.prevReading, currentReading: curr, units: res.units, charge: res.charge, prevDue: res.prevDue, fine: res.fine, grandTotal: res.grandTotal
-            });
+
+            const readingObj = {
+                id: 'r_' + Date.now(),
+                date,
+                month,
+                memberId,
+                prevReading: res.prevReading,
+                currentReading: curr,
+                units: res.units,
+                charge: res.charge,
+                prevDue: res.prevDue,
+                fine: res.fine,
+                grandTotal: res.grandTotal
+            };
+
+            db.readings.push(readingObj);
             saveDB();
             showToast('मिटर रिडिङ र बिल सफलतापूर्वक सेभ भयो!');
             document.getElementById('reading-form').reset();
             initReadingTab();
         }
 
+        function renderReadingsTable() {
+            const tbody = document.getElementById('readings-table-body');
+            tbody.innerHTML = '';
+            const slice = [...db.readings].reverse().slice(0, 15);
+            if (slice.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="9" class="p-4 text-center text-slate-400">कुनै रिडिङ रेकर्ड छैन</td></tr>`;
+                return;
+            }
+            slice.forEach(r => {
+                const member = db.members.find(m => m.id === r.memberId) || { name: 'अज्ञात' };
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-semibold text-blue-700">${r.date}</td>
+                        <td class="p-3">${r.month}</td>
+                        <td class="p-3 font-medium">${member.name}</td>
+                        <td class="p-3">${r.prevReading} / ${r.currentReading}</td>
+                        <td class="p-3 font-bold">${r.units}</td>
+                        <td class="p-3">रु. ${r.charge}</td>
+                        <td class="p-3 text-rose-600">रु. ${r.fine}</td>
+                        <td class="p-3 font-extrabold text-blue-800">रु. ${r.grandTotal}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="deleteReading('${r.id}')" class="text-rose-600 hover:text-rose-800 px-2 py-1"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function deleteReading(id) {
+            if(confirm('के तपाईं यो रिडिङ हटाउन चाहनुहुन्छ?')) {
+                db.readings = db.readings.filter(r => r.id !== id);
+                saveDB();
+                renderReadingsTable();
+                showToast('रिडिङ हटाइयो!', 'error');
+            }
+        }
+
         function renderBulkReadingTable() {
             const tbody = document.getElementById('bulk-reading-tbody');
             tbody.innerHTML = '';
+            if(db.members.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">कुनै सदस्य फेला परेन</td></tr>`;
+                return;
+            }
             db.members.forEach(m => {
                 const memberReadings = db.readings.filter(r => r.memberId === m.id);
                 let prevReading = memberReadings.length > 0 ? parseFloat(memberReadings[memberReadings.length - 1].currentReading) || 0 : 0;
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50" data-member-id="${m.id}">
-                        <td class="p-3 font-bold">${m.meterNo}</td>
-                        <td class="p-3">${m.name}</td>
-                        <td class="p-3">${prevReading}</td>
-                        <td class="p-3"><input type="number" step="0.01" class="bulk-curr-input w-32 px-3 py-1.5 border rounded-xl font-bold"></td>
-                        <td class="p-3 bulk-units font-bold">0</td>
+                        <td class="p-3 font-bold text-slate-700">${m.meterNo}</td>
+                        <td class="p-3 font-medium">${m.name}</td>
+                        <td class="p-3 prev-reading text-slate-500 font-semibold">${prevReading}</td>
+                        <td class="p-3">
+                            <input type="number" step="0.01" class="bulk-curr-input w-36 px-3 py-1.5 border border-slate-300 rounded-xl font-bold text-blue-700 focus:ring-2 focus:ring-cyan-500 outline-none" placeholder="हालको अङ्क">
+                        </td>
+                        <td class="p-3 bulk-units font-bold text-slate-600">0</td>
                         <td class="p-3 bulk-charge font-bold text-emerald-700">रु. 0</td>
-                    </tr>`;
+                    </tr>
+                `;
             });
+
             document.querySelectorAll('.bulk-curr-input').forEach(inp => {
                 inp.addEventListener('input', function() {
                     const tr = this.closest('tr');
-                    const res = calculateBillDetails(tr.dataset.memberId, parseFloat(this.value) || 0);
+                    const memberId = tr.dataset.memberId;
+                    const curr = parseFloat(this.value) || 0;
+                    const res = calculateBillDetails(memberId, curr);
                     tr.querySelector('.bulk-units').innerText = res.units.toFixed(2);
                     tr.querySelector('.bulk-charge').innerText = 'रु. ' + res.grandTotal.toFixed(2);
                 });
@@ -501,26 +1053,65 @@
         }
 
         function saveBulkReadings() {
+            const month = document.getElementById('bulk-read-month').value;
+            const date = "२०८३-०७-३०";
             let count = 0;
+
             document.querySelectorAll('#bulk-reading-tbody tr').forEach(tr => {
-                const curr = parseFloat(tr.querySelector('.bulk-curr-input').value);
+                const memberId = tr.dataset.memberId;
+                const currInput = tr.querySelector('.bulk-curr-input');
+                const curr = parseFloat(currInput.value);
                 if (!isNaN(curr)) {
-                    const res = calculateBillDetails(tr.dataset.memberId, curr);
+                    const res = calculateBillDetails(memberId, curr);
                     db.readings.push({
-                        id: 'r_' + Date.now() + '_' + Math.random(), date: "२०८३-०७-३०", month: "कार्तिक",
-                        memberId: tr.dataset.memberId, prevReading: res.prevReading, currentReading: curr, units: res.units, charge: res.charge, prevDue: res.prevDue, fine: res.fine, grandTotal: res.grandTotal
+                        id: 'r_' + Date.now() + '_' + Math.random(),
+                        date,
+                        month,
+                        memberId,
+                        prevReading: res.prevReading,
+                        currentReading: curr,
+                        units: res.units,
+                        charge: res.charge,
+                        prevDue: res.prevDue,
+                        fine: res.fine,
+                        grandTotal: res.grandTotal
                     });
                     count++;
                 }
             });
-            if (count > 0) { saveDB(); showToast(`${count} जनाको रिडिङ सेभ भयो!`); switchTab('reading'); }
-            else { showToast('कृपया कम्तिमा एक जनाको अङ्क भर्नुहोस्!', 'error'); }
+
+            if (count > 0) {
+                saveDB();
+                showToast(`${count} जना सदस्यहरूको रिडिङ सफलतापूर्वक सेभ भयो!`);
+                switchTab('reading');
+            } else {
+                showToast('कृपया कम्तिमा एक जना सदस्यको हालको अङ्क भर्नुहोस्!', 'error');
+            }
         }
 
         function initReceiptTab() {
+            document.getElementById('pay-date').value = "२०८३-०७-२१";
             const select = document.getElementById('pay-member');
             select.innerHTML = '<option value="">-- सदस्य छान्नुहोस् --</option>';
-            db.members.forEach(m => select.innerHTML += `<option value="${m.id}">${m.name} (मिटर नं: ${m.meterNo})</option>`);
+            db.members.forEach(m => {
+                select.innerHTML += `<option value="${m.id}">${m.name} (मिटर नं: ${m.meterNo})</option>`;
+            });
+
+            const bankSel = document.getElementById('pay-bank-id');
+            bankSel.innerHTML = '';
+            db.bankAccounts.forEach(b => {
+                bankSel.innerHTML += `<option value="${b.id}">${b.name}</option>`;
+            });
+        }
+
+        function toggleBankSelect(modeId, divId) {
+            const mode = document.getElementById(modeId).value;
+            const div = document.getElementById(divId);
+            if (mode.includes('बैंक')) {
+                div.classList.remove('hidden');
+            } else {
+                div.classList.add('hidden');
+            }
         }
 
         function onSelectPaymentMember() {
@@ -531,166 +1122,605 @@
             document.getElementById('pay-amount').value = res.prevDue.toFixed(2);
         }
 
+        function fillFullDue() {
+            const memberId = document.getElementById('pay-member').value;
+            if(!memberId) return;
+            const res = calculateBillDetails(memberId, 0);
+            document.getElementById('pay-amount').value = res.prevDue.toFixed(2);
+        }
+
         function savePaymentReceipt(e) {
             e.preventDefault();
             const memberId = document.getElementById('pay-member').value;
             const amount = parseFloat(document.getElementById('pay-amount').value) || 0;
-            db.payments.push({ id: 'p_' + Date.now(), date: "२०८३-०७-२१", memberId, amount, discount: 0, mode: 'नगद (Cash)', remarks: 'महसुल भुक्तानी' });
+            const discount = parseFloat(document.getElementById('pay-discount').value) || 0;
+            const mode = document.getElementById('pay-mode').value;
+            const bankId = document.getElementById('pay-bank-id').value;
+            const date = document.getElementById('pay-date').value;
+            const remarks = document.getElementById('pay-remarks').value;
+
+            const paymentObj = {
+                id: 'p_' + Date.now(),
+                date,
+                memberId,
+                amount,
+                discount,
+                mode,
+                bankId: mode.includes('बैंक') ? bankId : null,
+                remarks
+            };
+
+            db.payments.push(paymentObj);
+            
+            if (mode.includes('बैंक')) {
+                const bank = db.bankAccounts.find(b => b.id === bankId);
+                if (bank) bank.balance += amount;
+            }
+
             saveDB();
             showToast('भुक्तानी रसिद सुरक्षित भयो!');
+            renderReceiptPreview(paymentObj);
             document.getElementById('payment-form').reset();
             initReceiptTab();
+        }
+
+        function renderReceiptPreview(p) {
+            const member = db.members.find(m => m.id === p.memberId) || { name: 'अज्ञात', meterNo: '00' };
+            const box = document.getElementById('receipt-preview-box');
+            box.innerHTML = `
+                <div class="text-center pb-3 border-b border-slate-300">
+                    <h3 class="font-extrabold text-lg text-slate-900">${db.org.name}</h3>
+                    <p class="text-xs text-slate-500">${db.org.address} | फोन: ${db.org.phone}</p>
+                    <h4 class="font-bold text-sm text-emerald-700 mt-2 bg-emerald-50 py-1 rounded">अधिकृत भुक्तानी रसिद (Payment Receipt)</h4>
+                </div>
+                <div class="py-3 text-sm space-y-1.5">
+                    <div class="flex justify-between"><span>रसिद नं:</span><span class="font-bold">#${p.id.slice(-6)}</span></div>
+                    <div class="flex justify-between"><span>मिति:</span><span class="font-bold">${p.date}</span></div>
+                    <div class="flex justify-between"><span>सदस्यको नाम:</span><span class="font-bold">${member.name}</span></div>
+                    <div class="flex justify-between"><span>मिटर नम्बर:</span><span class="font-bold">${member.meterNo}</span></div>
+                    <div class="flex justify-between"><span>भुक्तानी माध्यम:</span><span class="font-bold">${p.mode}</span></div>
+                    <div class="flex justify-between"><span>बुझाएको रकम:</span><span class="font-extrabold text-emerald-700">रु. ${p.amount.toFixed(2)}</span></div>
+                    <div class="flex justify-between"><span>छुट रकम:</span><span class="font-bold text-amber-600">रु. ${p.discount.toFixed(2)}</span></div>
+                    <div class="flex justify-between"><span>कैफियत:</span><span>${p.remarks || 'साधारण महसुल भुक्तानी'}</span></div>
+                </div>
+                <div class="pt-4 border-t border-slate-300 flex justify-between text-xs text-slate-600">
+                    <span>संकलन अपरेटर: व्यवस्थापक</span>
+                    <span>हस्ताक्षर: ........................</span>
+                </div>
+            `;
         }
 
         function renderBulkPaymentTable() {
             const tbody = document.getElementById('bulk-payment-tbody');
             tbody.innerHTML = '';
+            if(db.members.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">कुनै सदस्य फेला परेन</td></tr>`;
+                return;
+            }
             db.members.forEach(m => {
                 const res = calculateBillDetails(m.id, 0);
                 tbody.innerHTML += `
                     <tr class="hover:bg-slate-50" data-member-id="${m.id}">
-                        <td class="p-3 font-bold">${m.meterNo}</td>
-                        <td class="p-3">${m.name}</td>
+                        <td class="p-3 font-bold text-slate-700">${m.meterNo}</td>
+                        <td class="p-3 font-medium">${m.name}</td>
                         <td class="p-3 font-bold text-amber-600">रु. ${res.prevDue.toFixed(2)}</td>
-                        <td class="p-3"><input type="number" step="0.01" value="${res.prevDue > 0 ? res.prevDue : 0}" class="bulk-pay-amount w-32 px-3 py-1.5 border rounded-xl font-bold"></td>
-                    </tr>`;
+                        <td class="p-3">
+                            <input type="number" step="0.01" value="${res.prevDue > 0 ? res.prevDue : 0}" class="bulk-pay-amount w-32 px-3 py-1.5 border border-slate-300 rounded-xl font-bold text-emerald-700 focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </td>
+                        <td class="p-3">
+                            <input type="number" step="0.01" value="0" class="bulk-pay-disc w-24 px-3 py-1.5 border border-slate-300 rounded-xl text-slate-700">
+                        </td>
+                    </tr>
+                `;
             });
         }
 
         function saveBulkPayments() {
+            const date = "२०८३-०७-२१";
             let count = 0;
             document.querySelectorAll('#bulk-payment-tbody tr').forEach(tr => {
+                const memberId = tr.dataset.memberId;
                 const amount = parseFloat(tr.querySelector('.bulk-pay-amount').value) || 0;
-                if (amount > 0) {
-                    db.payments.push({ id: 'p_' + Date.now() + '_' + Math.random(), date: "२०८३-०७-२१", memberId: tr.dataset.memberId, amount, discount: 0, mode: 'नगद', remarks: 'बल्क संकलन' });
+                const discount = parseFloat(tr.querySelector('.bulk-pay-disc').value) || 0;
+                if (amount > 0 || discount > 0) {
+                    db.payments.push({
+                        id: 'p_' + Date.now() + '_' + Math.random(),
+                        date,
+                        memberId,
+                        amount,
+                        discount,
+                        mode: 'नगद (Cash)',
+                        bankId: null,
+                        remarks: 'बल्क भुक्तानी संकलन'
+                    });
                     count++;
                 }
             });
-            if (count > 0) { saveDB(); showToast(`${count} जनाको भुक्तानी सेभ भयो!`); switchTab('receipt'); }
-            else { showToast('रकम भर्नुहोस्!', 'error'); }
+
+            if (count > 0) {
+                saveDB();
+                showToast(`${count} जना सदस्यहरूको भुक्तानी सफलतापूर्वक सेभ भयो!`);
+                switchTab('receipt');
+            } else {
+                showToast('कृपया कम्तिमा एक जना सदस्यको रकम भर्नुहोस्!', 'error');
+            }
         }
 
         function initStatementTab() {
             const select = document.getElementById('stmt-member');
             select.innerHTML = '<option value="">-- सदस्य छान्नुहोस् --</option>';
-            db.members.forEach(m => select.innerHTML += `<option value="${m.id}">${m.name} (मिटर नं: ${m.meterNo})</option>`);
+            db.members.forEach(m => {
+                select.innerHTML += `<option value="${m.id}">${m.name} (मिटर नं: ${m.meterNo})</option>`;
+            });
         }
 
         function renderMemberStatement() {
             const memberId = document.getElementById('stmt-member').value;
-            if (!memberId) return;
+            const headerDiv = document.getElementById('stmt-org-header');
+            const infoDiv = document.getElementById('stmt-member-info');
+            const waterDiv = document.getElementById('stmt-water-section');
+            const loanDiv = document.getElementById('stmt-loan-section');
+
+            if (!memberId) {
+                headerDiv.innerHTML = '';
+                infoDiv.innerHTML = '';
+                waterDiv.innerHTML = '';
+                loanDiv.innerHTML = '';
+                return;
+            }
+
             const m = db.members.find(x => x.id === memberId);
-            document.getElementById('stmt-org-header').innerHTML = `<div class="text-center pb-3 border-b-2"><h2 class="text-lg font-bold">${db.org.name}</h2><p class="text-xs text-slate-500">${db.org.address} | फोन: ${db.org.phone}</p></div>`;
-            document.getElementById('stmt-member-info').innerHTML = `<div class="bg-slate-50 p-3 rounded-xl border text-sm"><strong>सदस्य:</strong> ${m.name} | <strong>मिटर नं:</strong> ${m.meterNo}</div>`;
-            
+            headerDiv.innerHTML = `
+                <div class="text-center pb-4 border-b-2 border-slate-800 flex items-center justify-between">
+                    <img src="${db.org.logo}" class="w-12 h-12 rounded-xl object-cover border">
+                    <div>
+                        <h2 class="text-xl font-extrabold text-slate-900">${db.org.name}</h2>
+                        <p class="text-xs text-slate-600">${db.org.address} | फोन: ${db.org.phone}</p>
+                        <p class="text-xs font-bold text-blue-700 mt-0.5">आधिकारिक सदस्य स्टेटमेन्ट (Water & Loan Ledger)</p>
+                    </div>
+                    <div class="text-right text-xs font-semibold text-slate-500">मिति: २०८३-०७-२१</div>
+                </div>
+            `;
+
+            infoDiv.innerHTML = `
+                <div class="grid grid-cols-2 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-sm">
+                    <div><strong>सदस्यको नाम:</strong> ${m.name}</div>
+                    <div><strong>मिटर नम्बर:</strong> ${m.meterNo}</div>
+                    <div><strong>मोबाइल नम्बर:</strong> ${m.phone || 'उपलब्ध छैन'}</div>
+                    <div><strong>ठेगाना:</strong> ${m.address}</div>
+                </div>
+            `;
+
             const readings = db.readings.filter(r => r.memberId === memberId);
+            const payments = db.payments.filter(p => p.memberId === memberId);
+            let waterRows = '';
             let totalBilled = m.openingDue || 0;
-            readings.forEach(r => totalBilled += parseFloat(r.grandTotal) || 0);
-            let totalPaid = db.payments.filter(p => p.memberId === memberId).reduce((s, p) => s + (p.amount || 0), 0);
+            let totalPaid = 0;
+
+            readings.forEach(r => {
+                totalBilled += parseFloat(r.grandTotal) || 0;
+                waterRows += `
+                    <tr>
+                        <td class="p-2 border">${r.date}</td>
+                        <td class="p-2 border">${r.month}</td>
+                        <td class="p-2 border">${r.currentReading} (युनिट: ${r.units})</td>
+                        <td class="p-2 border">रु. ${r.grandTotal}</td>
+                        <td class="p-2 border text-blue-700 font-semibold">रिडिङ बिल</td>
+                    </tr>
+                `;
+            });
+
+            payments.forEach(p => {
+                const amt = (parseFloat(p.amount) || 0) + (parseFloat(p.discount) || 0);
+                totalPaid += amt;
+                waterRows += `
+                    <tr>
+                        <td class="p-2 border">${p.date}</td>
+                        <td class="p-2 border">भुक्तानी</td>
+                        <td class="p-2 border">-</td>
+                        <td class="p-2 border text-emerald-700">-रु. ${amt}</td>
+                        <td class="p-2 border text-emerald-700 font-semibold">${p.mode}</td>
+                    </tr>
+                `;
+            });
+
             let finalDue = totalBilled - totalPaid;
             if(finalDue < 0) finalDue = 0;
 
-            document.getElementById('stmt-water-section').innerHTML = `<div class="text-right font-extrabold text-amber-700">कुल बाँकी बक्यौता: रु. ${finalDue.toFixed(2)}</div>`;
+            waterDiv.innerHTML = `
+                <div class="space-y-2">
+                    <h3 class="font-bold text-slate-800 text-base"><i class="fas fa-tint text-blue-600 mr-1.5"></i>पानी महसुल तथा बक्यौता लेजर</h3>
+                    <table class="w-full text-xs border-collapse border border-slate-300">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700">
+                                <th class="p-2 border">मिति</th>
+                                <th class="p-2 border">विवरण/महिना</th>
+                                <th class="p-2 border">मिटर अङ्क</th>
+                                <th class="p-2 border">रकम</th>
+                                <th class="p-2 border">प्रकार</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${waterRows || '<tr><td colspan="5" class="p-3 text-center text-slate-400">कुनै कारोबार छैन</td></tr>'}
+                        </tbody>
+                    </table>
+                    <div class="text-right font-extrabold text-sm text-amber-700 pt-1">
+                        कुल तिर्न बाँकी बक्यौता: रु. ${finalDue.toFixed(2)}
+                    </div>
+                </div>
+            `;
+
+            const loans = db.loans.filter(l => l.memberId === memberId);
+            let loanRows = '';
+            let totalLoan = 0;
+
+            loans.forEach(l => {
+                totalLoan += parseFloat(l.principal) || 0;
+                loanRows += `
+                    <tr>
+                        <td class="p-2 border">${l.date}</td>
+                        <td class="p-2 border">रु. ${l.principal}</td>
+                        <td class="p-2 border">${l.rate}%</td>
+                        <td class="p-2 border text-purple-700 font-semibold">सहकारी ऋण लगानी</td>
+                    </tr>
+                `;
+            });
+
+            loanDiv.innerHTML = `
+                <div class="space-y-2 pt-2">
+                    <h3 class="font-bold text-slate-800 text-base"><i class="fas fa-hand-holding-usd text-purple-600 mr-1.5"></i>सहकारी ऋण स्टेटमेन्ट (Loan Account Statement)</h3>
+                    <table class="w-full text-xs border-collapse border border-slate-300">
+                        <thead>
+                            <tr class="bg-slate-100 text-slate-700">
+                                <th class="p-2 border">लगानी मिति</th>
+                                <th class="p-2 border">ऋण साँवा रकम</th>
+                                <th class="p-2 border">ब्याज दर</th>
+                                <th class="p-2 border">स्थिति</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${loanRows || '<tr><td colspan="4" class="p-3 text-center text-slate-400">यो सदस्यको नाममा कुनै ऋण लगानी छैन</td></tr>'}
+                        </tbody>
+                    </table>
+                    <div class="text-right font-extrabold text-sm text-purple-700 pt-1">
+                        कुल बाँकी साँवा ऋण: रु. ${totalLoan.toFixed(2)}
+                    </div>
+                </div>
+            `;
         }
 
         function renderMembersTable() {
             const tbody = document.getElementById('members-table-body');
             tbody.innerHTML = '';
+            if (db.members.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-400">कुनै सदस्य छैन</td></tr>`;
+                return;
+            }
             db.members.forEach(m => {
-                tbody.innerHTML += `<tr class="hover:bg-slate-50"><td class="p-3 font-bold">${m.meterNo}</td><td class="p-3">${m.name}</td><td class="p-3">${m.phone || '-'}</td><td class="p-3">${m.address}</td></tr>`;
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-bold text-indigo-700">${m.meterNo}</td>
+                        <td class="p-3 font-medium">${m.name}</td>
+                        <td class="p-3">${m.phone || '-'}</td>
+                        <td class="p-3">${m.address}</td>
+                        <td class="p-3 font-bold text-amber-600">रु. ${m.openingDue || 0}</td>
+                        <td class="p-3 text-center">
+                            <button onclick="editMember('${m.id}')" class="text-blue-600 hover:text-blue-800 px-2"><i class="fas fa-edit"></i></button>
+                            <button onclick="deleteMember('${m.id}')" class="text-rose-600 hover:text-rose-800 px-2"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
             });
         }
 
-        function openMemberModal() { document.getElementById('member-modal').classList.remove('hidden'); }
-        function closeMemberModal() { document.getElementById('member-modal').classList.add('hidden'); }
+        function openMemberModal() {
+            document.getElementById('member-form').reset();
+            document.getElementById('mem-edit-id').value = '';
+            document.getElementById('modal-title').innerText = 'नयाँ सदस्य थप्नुहोस्';
+            document.getElementById('member-modal').classList.remove('hidden');
+        }
+
+        function closeMemberModal() {
+            document.getElementById('member-modal').classList.add('hidden');
+        }
+
         function saveMember(e) {
             e.preventDefault();
-            db.members.push({
-                id: 'm_' + Date.now(), meterNo: document.getElementById('mem-meter').value, name: document.getElementById('mem-name').value,
-                phone: document.getElementById('mem-phone').value, address: document.getElementById('mem-address').value, openingDue: 0
+            const id = document.getElementById('mem-edit-id').value;
+            const meterNo = document.getElementById('mem-meter').value;
+            const name = document.getElementById('mem-name').value;
+            const phone = document.getElementById('mem-phone').value;
+            const address = document.getElementById('mem-address').value;
+            const openingDue = parseFloat(document.getElementById('mem-due').value) || 0;
+
+            if (id) {
+                const m = db.members.find(x => x.id === id);
+                if (m) {
+                    m.meterNo = meterNo;
+                    m.name = name;
+                    m.phone = phone;
+                    m.address = address;
+                    m.openingDue = openingDue;
+                }
+                showToast('सदस्य विवरण अपडेट भयो!');
+            } else {
+                db.members.push({
+                    id: 'm_' + Date.now(),
+                    meterNo,
+                    name,
+                    phone,
+                    address,
+                    openingDue
+                });
+                showToast('नयाँ सदस्य सफलतापूर्वक थपियो!');
+            }
+            saveDB();
+            closeMemberModal();
+            renderMembersTable();
+        }
+
+        function editMember(id) {
+            const m = db.members.find(x => x.id === id);
+            if (!m) return;
+            document.getElementById('mem-edit-id').value = m.id;
+            document.getElementById('mem-meter').value = m.meterNo;
+            document.getElementById('mem-name').value = m.name;
+            document.getElementById('mem-phone').value = m.phone || '';
+            document.getElementById('mem-address').value = m.address;
+            document.getElementById('mem-due').value = m.openingDue || 0;
+            document.getElementById('modal-title').innerText = 'सदस्य विवरण सम्पादन गर्नुहोस्';
+            document.getElementById('member-modal').classList.remove('hidden');
+        }
+
+        function deleteMember(id) {
+            if (confirm('के तपाईं यो सदस्य मेटाउन चाहनुहुन्छ?')) {
+                db.members = db.members.filter(x => x.id !== id);
+                saveDB();
+                renderMembersTable();
+                showToast('सदस्य हटाइयो!', 'error');
+            }
+        }
+
+        function saveIncome(e) {
+            e.preventDefault();
+            db.income.push({
+                id: 'inc_' + Date.now(),
+                date: document.getElementById('inc-date').value,
+                source: document.getElementById('inc-source').value,
+                amount: parseFloat(document.getElementById('inc-amount').value) || 0,
+                desc: document.getElementById('inc-desc').value
             });
-            saveDB(); closeMemberModal(); renderMembersTable(); showToast('सदस्य थपियो!');
+            saveDB();
+            showToast('आम्दानी सफलतापूर्वक सेभ भयो!');
+            document.getElementById('income-form').reset();
+            document.getElementById('inc-date').value = "२०८३-०७-२१";
+        }
+
+        function saveExpense(e) {
+            e.preventDefault();
+            db.expense.push({
+                id: 'exp_' + Date.now(),
+                date: document.getElementById('exp-date').value,
+                category: document.getElementById('exp-category').value,
+                amount: parseFloat(document.getElementById('exp-amount').value) || 0,
+                desc: document.getElementById('exp-desc').value
+            });
+            saveDB();
+            showToast('खर्च सफलतापूर्वक सेभ भयो!');
+            document.getElementById('expense-form').reset();
+            document.getElementById('exp-date').value = "२०८३-०७-२१";
+        }
+
+        function saveTanker(e) {
+            e.preventDefault();
+            db.tanker.push({
+                id: 'tank_' + Date.now(),
+                date: document.getElementById('tank-date').value,
+                client: document.getElementById('tank-client').value,
+                qty: parseInt(document.getElementById('tank-qty').value) || 1,
+                amount: parseFloat(document.getElementById('tank-amount').value) || 0
+            });
+            saveDB();
+            showToast('ट्याङ्कर बिक्री रेकर्ड सेभ भयो!');
+            document.getElementById('tanker-form').reset();
+            document.getElementById('tank-date').value = "२०८३-०७-२१";
         }
 
         function saveLoan(e) {
             e.preventDefault();
-            db.loans.push({ id: 'loan_' + Date.now(), memberId: document.getElementById('loan-member').value, principal: parseFloat(document.getElementById('loan-principal').value) || 0, rate: 12, date: "२०८३-०७-२१" });
-            saveDB(); showToast('ऋण सेभ भयो!');
+            db.loans.push({
+                id: 'loan_' + Date.now(),
+                memberId: document.getElementById('loan-member').value,
+                principal: parseFloat(document.getElementById('loan-principal').value) || 0,
+                rate: parseFloat(document.getElementById('loan-rate').value) || 12,
+                date: document.getElementById('loan-date').value
+            });
+            saveDB();
+            showToast('ऋण लगानी विवरण सेभ भयो!');
+            document.getElementById('loan-form').reset();
+            document.getElementById('loan-date').value = "२०८३-०७-२१";
+            renderLoanTable();
         }
 
         function renderLoanTable() {
-            const select = document.getElementById('loan-member');
-            select.innerHTML = '';
-            db.members.forEach(m => select.innerHTML += `<option value="${m.id}">${m.name}</option>`);
+            const tbody = document.getElementById('loan-table-body');
+            tbody.innerHTML = '';
+            if (db.loans.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">कुनै ऋण लगानी छैन</td></tr>`;
+                return;
+            }
+            db.loans.forEach(l => {
+                const member = db.members.find(m => m.id === l.memberId) || { name: 'अज्ञात' };
+                tbody.innerHTML += `
+                    <tr class="hover:bg-slate-50">
+                        <td class="p-3 font-semibold">${l.date}</td>
+                        <td class="p-3 font-medium">${member.name}</td>
+                        <td class="p-3 font-bold text-purple-700">रु. ${l.principal}</td>
+                        <td class="p-3">${l.rate}%</td>
+                        <td class="p-3 text-center">
+                            <button onclick="deleteLoan('${l.id}')" class="text-rose-600 hover:text-rose-800"><i class="fas fa-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        function deleteLoan(id) {
+            if (confirm('के यो ऋण रेकर्ड हटाउने?')) {
+                db.loans = db.loans.filter(l => l.id !== id);
+                saveDB();
+                renderLoanTable();
+                showToast('ऋण रेकर्ड हटाइयो!', 'error');
+            }
+        }
+
+        function saveBankDeposit(e) {
+            e.preventDefault();
+            const bankId = document.getElementById('bank-acc-select').value;
+            const type = document.getElementById('bank-type').value;
+            const amount = parseFloat(document.getElementById('bank-amount').value) || 0;
+            const date = document.getElementById('bank-date').value;
+
+            const bank = db.bankAccounts.find(b => b.id === bankId);
+            if(bank) {
+                if(type.includes('Deposit')) bank.balance += amount;
+                else bank.balance -= amount;
+            }
+
+            db.bankTx.push({ id: 'btx_' + Date.now(), bankId, type, amount, date });
+            saveDB();
+            showToast('बैंक भौचर सुरक्षित भयो!');
+            document.getElementById('bank-form').reset();
+            document.getElementById('bank-date').value = "२०८३-०७-२१";
+        }
+
+        function savePayroll(e) {
+            e.preventDefault();
+            db.payroll.push({
+                id: 'pay_' + Date.now(),
+                name: document.getElementById('pay-emp-name').value,
+                role: document.getElementById('pay-emp-role').value,
+                salary: parseFloat(document.getElementById('pay-emp-salary').value) || 0,
+                date: document.getElementById('pay-emp-date').value
+            });
+            saveDB();
+            showToast('कर्मचारी पेरोल सेभ भयो!');
+            document.getElementById('payroll-form').reset();
+            document.getElementById('pay-emp-date').value = "२०८३-०७-२१";
+        }
+
+        let financeChartInstance = null;
+        function renderDashboard() {
+            document.getElementById('kpi-members').innerText = db.members.length;
+            
+            let totalDue = 0;
+            db.members.forEach(m => {
+                const res = calculateBillDetails(m.id, 0);
+                totalDue += res.prevDue;
+            });
+            document.getElementById('kpi-dues').innerText = 'रु. ' + totalDue.toLocaleString('en-IN');
+
+            let totalInc = db.income.reduce((s, i) => s + (i.amount || 0), 0) + db.payments.reduce((s, p) => s + (p.amount || 0), 0);
+            let totalExp = db.expense.reduce((s, e) => s + (e.amount || 0), 0) + db.payroll.reduce((s, pr) => s + (pr.salary || 0), 0);
+            
+            document.getElementById('kpi-income').innerText = 'रु. ' + totalInc.toLocaleString('en-IN');
+            document.getElementById('kpi-expense').innerText = 'रु. ' + totalExp.toLocaleString('en-IN');
+
+            let totalLoan = db.loans.reduce((s, l) => s + (l.principal || 0), 0);
+            document.getElementById('kpi-loan').innerText = 'रु. ' + totalLoan.toLocaleString('en-IN');
+
+            let totalBank = db.bankAccounts.reduce((s, b) => s + (b.balance || 0), 0);
+            let cashBalance = totalInc - totalExp - totalBank;
+            if(cashBalance < 0) cashBalance = 0;
+            document.getElementById('kpi-cash-bank').innerText = 'रु. ' + (cashBalance + totalBank).toLocaleString('en-IN');
+            document.getElementById('kpi-cash-bank-split').innerText = `नगद: रु. ${cashBalance.toLocaleString('en-IN')} | बैंक: रु. ${totalBank.toLocaleString('en-IN')}`;
+
+            const actContainer = document.getElementById('recent-activities');
+            actContainer.innerHTML = '';
+            let allActs = [
+                ...db.payments.map(p => ({ date: p.date, text: `भुक्तानी प्राप्त: रु. ${p.amount}`, type: 'success' })),
+                ...db.readings.map(r => ({ date: r.date, text: `मिटर रिडिङ बिल: रु. ${r.grandTotal}`, type: 'blue' })),
+                ...db.expense.map(e => ({ date: e.date, text: `खर्च: ${e.category} (रु. ${e.amount})`, type: 'rose' }))
+            ].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 8);
+
+            if(allActs.length === 0) {
+                actContainer.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">कुनै गतिविधि छैन</p>`;
+            } else {
+                allActs.forEach(a => {
+                    actContainer.innerHTML += `
+                        <div class="p-2.5 bg-slate-50 rounded-xl border border-slate-100 flex items-center justify-between text-xs">
+                            <span class="font-medium text-slate-700">${a.text}</span>
+                            <span class="text-slate-400">${a.date}</span>
+                        </div>
+                    `;
+                });
+            }
+
+            const ctx = document.getElementById('financeChart').getContext('2d');
+            if(financeChartInstance) financeChartInstance.destroy();
+            financeChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['कुल आम्दानी', 'कुल खर्च', 'ऋण लगानी', 'बाँकी बक्यौता'],
+                    datasets: [{
+                        label: 'वित्तीय सारांश (रु)',
+                        data: [totalInc, totalExp, totalLoan, totalDue],
+                        backgroundColor: ['#10b981', '#f43f5e', '#8b5cf6', '#f59e0b'],
+                        borderRadius: 8
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
         }
 
         function renderReports() {
             let totalInc = db.income.reduce((s, i) => s + (i.amount || 0), 0) + db.payments.reduce((s, p) => s + (p.amount || 0), 0);
-            document.getElementById('report-pnl').innerHTML = `<h3 class="font-bold">नाफा-नोक्सान</h3><p class="text-emerald-600 font-bold">कुल आम्दानी: रु. ${totalInc.toFixed(2)}</p>`;
-            document.getElementById('report-bs').innerHTML = `<h3 class="font-bold">वासलात</h3><p class="text-purple-600 font-bold">ऋण लगानी: रु. ${db.loans.reduce((s, l) => s + (l.principal || 0), 0).toFixed(2)}</p>`;
+            let totalExp = db.expense.reduce((s, e) => s + (e.amount || 0), 0) + db.payroll.reduce((s, pr) => s + (pr.salary || 0), 0);
+            let netProfit = totalInc - totalExp;
+
+            document.getElementById('report-pnl').innerHTML = `
+                <div class="flex justify-between py-1 border-b"><span>कुल आम्दानी:</span><span class="font-bold text-emerald-600">रु. ${totalInc.toFixed(2)}</span></div>
+                <div class="flex justify-between py-1 border-b"><span>कुल खर्च:</span><span class="font-bold text-rose-600">रु. ${totalExp.toFixed(2)}</span></div>
+                <div class="flex justify-between py-2 font-extrabold text-base"><span>खुद मुनाफा:</span><span class="${netProfit >= 0 ? 'text-blue-700' : 'text-rose-600'}">रु. ${netProfit.toFixed(2)}</span></div>
+            `;
+
+            let totalBank = db.bankAccounts.reduce((s, b) => s + (b.balance || 0), 0);
+            let totalLoan = db.loans.reduce((s, l) => s + (l.principal || 0), 0);
+
+            document.getElementById('report-bs').innerHTML = `
+                <div class="flex justify-between py-1 border-b"><span>बैंक मौज्दात:</span><span class="font-bold">रु. ${totalBank.toFixed(2)}</span></div>
+                <div class="flex justify-between py-1 border-b"><span>लगानीमा रहेको ऋण (सम्पत्ति):</span><span class="font-bold">रु. ${totalLoan.toFixed(2)}</span></div>
+                <div class="flex justify-between py-2 font-extrabold text-base"><span>कुल संस्थागत सम्पत्ति:</span><span class="text-purple-700">रु. ${(totalBank + totalLoan).toFixed(2)}</span></div>
+            `;
         }
 
-        // Settings Handlers
-        function initSettingsTab() {
-            document.getElementById('set-org-name').value = db.org.name;
-            document.getElementById('set-org-address').value = db.org.address;
-            document.getElementById('set-org-phone').value = db.org.phone;
-            document.getElementById('set-org-logo').value = db.org.logo;
-            document.getElementById('set-min-units').value = db.tariff.minUnits;
-            document.getElementById('set-min-charge').value = db.tariff.minCharge;
-            document.getElementById('set-extra-rate').value = db.tariff.extraRate;
-        }
-
-        function saveOrgSettings(e) {
-            e.preventDefault();
-            db.org.name = document.getElementById('set-org-name').value;
-            db.org.address = document.getElementById('set-org-address').value;
-            db.org.phone = document.getElementById('set-org-phone').value;
-            db.org.logo = document.getElementById('set-org-logo').value;
-            saveDB();
-            showToast('संस्थाको विवरण सफलतापूर्वक अपडेट भयो!');
-            renderDashboard();
-        }
-
-        function saveTariffSettings(e) {
-            e.preventDefault();
-            db.tariff.minUnits = parseFloat(document.getElementById('set-min-units').value) || 6;
-            db.tariff.minCharge = parseFloat(document.getElementById('set-min-charge').value) || 250;
-            db.tariff.extraRate = parseFloat(document.getElementById('set-extra-rate').value) || 140;
-            saveDB();
-            showToast('महसुल नियम सफलतापूर्वक अपडेट भयो!');
-        }
-
-        function renderDashboard() {
-            document.getElementById('kpi-members').innerText = db.members.length;
-            document.getElementById('dash-org-title').innerText = db.org.name;
-            document.getElementById('sidebar-org-name').innerText = db.org.name;
-            document.getElementById('sidebar-logo-img').src = db.org.logo;
-            let totalDue = 0;
-            db.members.forEach(m => totalDue += calculateBillDetails(m.id, 0).prevDue);
-            document.getElementById('kpi-dues').innerText = 'रु. ' + totalDue.toLocaleString('en-IN');
-            let totalInc = db.income.reduce((s, i) => s + (i.amount || 0), 0) + db.payments.reduce((s, p) => s + (p.amount || 0), 0);
-            document.getElementById('kpi-income').innerText = 'रु. ' + totalInc.toLocaleString('en-IN');
-            document.getElementById('kpi-loan').innerText = 'रु. ' + db.loans.reduce((s, l) => s + (l.principal || 0), 0).toLocaleString('en-IN');
-        }
-
+        // Fixed Print Function to Avoid Blank Pages
         function printElement(divId) {
             const content = document.getElementById(divId).innerHTML;
             const printWindow = window.open('', '_blank', 'height=600,width=800');
-            printWindow.document.write('<html><head><title>प्रिन्ट</title><script src="https://cdn.tailwindcss.com"></script></head><body class="p-6">');
+            printWindow.document.write('<html><head><title>प्रिन्ट बिल / स्टेटमेन्ट</title>');
+            printWindow.document.write('<script src="https://cdn.tailwindcss.com"></script>');
+            printWindow.document.write('<style>body { font-family: Mukta, sans-serif; padding: 20px; background: white; }</style>');
+            printWindow.document.write('</head><body>');
             printWindow.document.write(content);
             printWindow.document.write('</body></html>');
             printWindow.document.close();
-            setTimeout(() => { printWindow.print(); printWindow.close(); }, 500);
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 500);
         }
 
         function exportFullBackup() {
             const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
             const dlAnchor = document.createElement('a');
             dlAnchor.setAttribute("href", dataStr);
-            dlAnchor.setAttribute("download", `khanepani_backup_2083.json`);
-            document.body.appendChild(dlAnchor); dlAnchor.click(); dlAnchor.remove();
-            showToast('ब्याकअप डाउनलोड भयो!');
+            dlAnchor.setAttribute("download", `khanepani_erp_backup_2083.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            showToast('ब्याकअप फाइल सफलतापूर्वक डाउनलोड भयो!');
         }
 
         function importFullBackup(e) {
@@ -698,17 +1728,32 @@
             if (!file) return;
             const reader = new FileReader();
             reader.onload = function(event) {
-                try { db = JSON.parse(event.target.result); saveDB(); showToast('रिस्टोर भयो!'); switchTab('dashboard'); }
-                catch(err) { showToast('अमान्य फाइल!', 'error'); }
+                try {
+                    db = JSON.parse(event.target.result);
+                    saveDB();
+                    showToast('डेटा सफलतापूर्वक रिस्टोर भयो!');
+                    switchTab('dashboard');
+                } catch(err) {
+                    showToast('अमान्य ब्याकअप फाइल!', 'error');
+                }
             };
             reader.readAsText(file);
         }
 
         function resetAllData() {
-            if(confirm('के तपाईं सबै डेटा रिसेट गर्न चाहनुहुन्छ?')) { localStorage.removeItem('khanepani_erp_db'); location.reload(); }
+            if(confirm('चेतावनी: के तपाईं सबै डेटा रिसेट गर्न चाहनुहुन्छ? यो अपरिवर्तनीय छ!')) {
+                localStorage.removeItem('khanepani_erp_db');
+                location.reload();
+            }
         }
 
-        window.onload = function() { renderDashboard(); };
+        window.onload = function() {
+            ['inc-date', 'exp-date', 'tank-date', 'loan-date', 'bank-date', 'pay-emp-date'].forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.value = "२०८३-०७-२१";
+            });
+            renderDashboard();
+        };
     </script>
 </body>
 </html>
