@@ -50,7 +50,7 @@
                     <h1 id="sidebar-org-name" class="font-bold text-white text-base leading-tight truncate">पुरानागाउँ खानेपानी तथा सहकारी</h1>
                     <p class="text-xs text-emerald-400 flex items-center gap-1 mt-0.5">
                         <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span>लाइभ सेटिङ्स सक्रिय</span>
+                        <span>सक्रिय र सुरक्षित</span>
                     </p>
                 </div>
             </div>
@@ -630,7 +630,6 @@
             document.getElementById('report-bs').innerHTML = `<h3 class="font-bold">वासलात</h3><p class="text-purple-600 font-bold">ऋण लगानी: रु. ${db.loans.reduce((s, l) => s + (l.principal || 0), 0).toFixed(2)}</p>`;
         }
 
-        // Settings Handlers
         function initSettingsTab() {
             document.getElementById('set-org-name').value = db.org.name;
             document.getElementById('set-org-address').value = db.org.address;
