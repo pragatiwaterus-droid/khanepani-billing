@@ -887,6 +887,7 @@
             const member = db.members.find(m => m.id === memberId);
             if (!member) return { units: 0, charge: 0, prevDue: 0, fine: 0, grandTotal: 0, prevReading: 0 };
 
+            // Find last reading for this member
             const memberReadings = db.readings.filter(r => r.memberId === memberId);
             let prevReading = 0;
             if (memberReadings.length > 0) {
@@ -903,11 +904,13 @@
                 charge = 250 + (units - 6) * 140;
             }
 
+            // Calculate current due including opening due and past bills minus payments
             let totalPaid = db.payments.filter(p => p.memberId === memberId).reduce((s, p) => s + (parseFloat(p.amount) || 0) + (parseFloat(p.discount) || 0), 0);
             let totalBilled = db.readings.filter(r => r.memberId === memberId).reduce((s, r) => s + (parseFloat(r.grandTotal) || 0), 0);
             let prevDue = (member.openingDue || 0) + totalBilled - totalPaid;
             if(prevDue < 0) prevDue = 0;
 
+            // 20% Fine rule if delayed past 10 days (simulated or active)
             let fine = charge * 0.20; 
             let grandTotal = charge + prevDue + fine;
 
@@ -915,6 +918,7 @@
         }
 
         function initReadingTab() {
+            // Set current date to end of month (e.g. २०८३-०७-३०)
             document.getElementById('read-date').value = "२०८३-०७-३०";
             const select = document.getElementById('read-member');
             select.innerHTML = '<option value="">-- सदस्य छान्नुहोस् --</option>';
@@ -1016,6 +1020,7 @@
             }
         }
 
+        // Bulk Reading Table
         function renderBulkReadingTable() {
             const tbody = document.getElementById('bulk-reading-tbody');
             tbody.innerHTML = '';
@@ -1040,6 +1045,7 @@
                 `;
             });
 
+            // Live calculation bindings
             document.querySelectorAll('.bulk-curr-input').forEach(inp => {
                 inp.addEventListener('input', function() {
                     const tr = this.closest('tr');
@@ -1054,7 +1060,7 @@
 
         function saveBulkReadings() {
             const month = document.getElementById('bulk-read-month').value;
-            const date = "२०८३-०७-३०";
+            const date = "२०८३-०७-३०"; // Month end default
             let count = 0;
 
             document.querySelectorAll('#bulk-reading-tbody tr').forEach(tr => {
@@ -1089,6 +1095,7 @@
             }
         }
 
+        // Payment Receipt Functions
         function initReceiptTab() {
             document.getElementById('pay-date').value = "२०८३-०७-२१";
             const select = document.getElementById('pay-member');
@@ -1152,6 +1159,7 @@
 
             db.payments.push(paymentObj);
             
+            // If paid via bank, update bank account balance
             if (mode.includes('बैंक')) {
                 const bank = db.bankAccounts.find(b => b.id === bankId);
                 if (bank) bank.balance += amount;
@@ -1190,6 +1198,7 @@
             `;
         }
 
+        // Bulk Payment Table
         function renderBulkPaymentTable() {
             const tbody = document.getElementById('bulk-payment-tbody');
             tbody.innerHTML = '';
@@ -1246,6 +1255,7 @@
             }
         }
 
+        // Member Statement & Loan Search Integration
         function initStatementTab() {
             const select = document.getElementById('stmt-member');
             select.innerHTML = '<option value="">-- सदस्य छान्नुहोस् --</option>';
@@ -1291,6 +1301,7 @@
                 </div>
             `;
 
+            // Water Meter Readings & Dues Ledger
             const readings = db.readings.filter(r => r.memberId === memberId);
             const payments = db.payments.filter(p => p.memberId === memberId);
             let waterRows = '';
@@ -1350,6 +1361,7 @@
                 </div>
             `;
 
+            // Loan Statement Section (Member Specific Search)
             const loans = db.loans.filter(l => l.memberId === memberId);
             let loanRows = '';
             let totalLoan = 0;
@@ -1389,6 +1401,7 @@
             `;
         }
 
+        // Members CRUD
         function renderMembersTable() {
             const tbody = document.getElementById('members-table-body');
             tbody.innerHTML = '';
@@ -1481,6 +1494,7 @@
             }
         }
 
+        // Income, Expense, Tanker, Loan, Bank, Payroll Handlers
         function saveIncome(e) {
             e.preventDefault();
             db.income.push({
@@ -1609,6 +1623,7 @@
             document.getElementById('pay-emp-date').value = "२०८३-०७-२१";
         }
 
+        // Dashboard & Reports rendering
         let financeChartInstance = null;
         function renderDashboard() {
             document.getElementById('kpi-members').innerText = db.members.length;
@@ -1635,6 +1650,7 @@
             document.getElementById('kpi-cash-bank').innerText = 'रु. ' + (cashBalance + totalBank).toLocaleString('en-IN');
             document.getElementById('kpi-cash-bank-split').innerText = `नगद: रु. ${cashBalance.toLocaleString('en-IN')} | बैंक: रु. ${totalBank.toLocaleString('en-IN')}`;
 
+            // Recent Activities
             const actContainer = document.getElementById('recent-activities');
             actContainer.innerHTML = '';
             let allActs = [
@@ -1656,6 +1672,7 @@
                 });
             }
 
+            // Chart
             const ctx = document.getElementById('financeChart').getContext('2d');
             if(financeChartInstance) financeChartInstance.destroy();
             financeChartInstance = new Chart(ctx, {
@@ -1694,22 +1711,8 @@
             `;
         }
 
-        // Fixed Print Function to Avoid Blank Pages
-        function printElement(divId) {
-            const content = document.getElementById(divId).innerHTML;
-            const printWindow = window.open('', '_blank', 'height=600,width=800');
-            printWindow.document.write('<html><head><title>प्रिन्ट बिल / स्टेटमेन्ट</title>');
-            printWindow.document.write('<script src="https://cdn.tailwindcss.com"></script>');
-            printWindow.document.write('<style>body { font-family: Mukta, sans-serif; padding: 20px; background: white; }</style>');
-            printWindow.document.write('</head><body>');
-            printWindow.document.write(content);
-            printWindow.document.write('</body></html>');
-            printWindow.document.close();
-            printWindow.focus();
-            setTimeout(() => {
-                printWindow.print();
-                printWindow.close();
-            }, 500);
+        function printElement(id) {
+            window.print();
         }
 
         function exportFullBackup() {
@@ -1747,6 +1750,7 @@
             }
         }
 
+        // Initialize default dates across forms on load
         window.onload = function() {
             ['inc-date', 'exp-date', 'tank-date', 'loan-date', 'bank-date', 'pay-emp-date'].forEach(id => {
                 const el = document.getElementById(id);
