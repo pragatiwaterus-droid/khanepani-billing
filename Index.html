@@ -1,0 +1,2608 @@
+<!DOCTYPE html>
+<html lang="ne">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>खानेपानी तथा सहकारी व्यवस्थापन प्रणाली (ERP)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- Google Fonts: Mukta & Noto Sans Devanagari for crisp Nepali Unicode -->
+    <link href="https://fonts.googleapis.com/css2?family=Mukta:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js for Dashboard Graphs -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        body {
+            font-family: 'Mukta', sans-serif;
+            background-color: #f1f5f9;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* Print Media Styles for Official Reports & Bills */
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: white !important;
+                padding: 15px !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-blue-600 selection:text-white">
+
+    <!-- Toast Notification Banner -->
+    <div id="toast-container" class="fixed top-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Mobile Header -->
+    <header class="lg:hidden bg-slate-900 text-white px-4 py-3 flex items-center justify-between sticky top-0 z-30 shadow-md no-print">
+        <div class="flex items-center gap-3">
+            <button onclick="toggleSidebar()" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white">
+                <i class="fas fa-bars text-lg"></i>
+            </button>
+            <span class="font-bold text-lg truncate" id="mobile-org-title">खानेपानी तथा सहकारी प्रणाली</span>
+        </div>
+        <div class="text-xs bg-blue-600 px-2.5 py-1 rounded-full font-semibold" id="mobile-bs-date">२०८३-०७-२१</div>
+    </header>
+
+    <!-- Sidebar Backdrop for Mobile -->
+    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/50 z-30 hidden lg:hidden no-print"></div>
+
+    <div class="flex min-h-screen">
+        <!-- Left Navigation Sidebar -->
+        <aside id="sidebar" class="fixed lg:sticky top-0 left-0 z-40 h-screen w-72 bg-slate-900 text-slate-200 flex flex-col transition-transform duration-300 -translate-x-full lg:translate-x-0 shadow-2xl no-print">
+            <!-- Brand Header -->
+            <div class="p-4 border-b border-slate-800 flex items-center gap-3 bg-slate-950">
+                <img id="sidebar-logo" src="https://placehold.co/48x48/2563eb/ffffff?text=खा" alt="Logo" class="w-11 h-11 rounded-xl object-cover border border-slate-700 bg-white">
+                <div class="overflow-hidden">
+                    <h1 id="sidebar-org-name" class="font-bold text-white text-base leading-tight truncate">पुरानागाउँ खानेपानी तथा सहकारी</h1>
+                    <p class="text-xs text-emerald-400 flex items-center gap-1 mt-0.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="sync-status-text">सुरक्षित लोकल + क्लाउड रेडी</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Live Nepali Date Badge -->
+            <div class="px-4 py-2.5 bg-slate-800/80 border-b border-slate-800 flex items-center justify-between text-xs">
+                <span class="text-slate-400"><i class="far fa-calendar-alt mr-1 text-blue-400"></i>आजको मिति:</span>
+                <span id="sidebar-bs-date" class="font-bold text-amber-300 text-sm tracking-wide">२०८३-०७-२१</span>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 overflow-y-auto py-3 px-3 space-y-1 text-sm">
+                <button onclick="switchTab('dashboard')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium transition bg-blue-600 text-white" data-tab="dashboard">
+                    <i class="fas fa-chart-pie w-5 text-center"></i> ड्यासबोर्ड (Dashboard)
+                </button>
+                <button onclick="switchTab('reading')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="reading">
+                    <i class="fas fa-tachometer-alt w-5 text-center text-cyan-400"></i> मासिक मिटर रिडिङ इन्ट्री
+                </button>
+                <button onclick="switchTab('receipt')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="receipt">
+                    <i class="fas fa-receipt w-5 text-center text-emerald-400"></i> भुक्तानी रसिद (Receipt)
+                </button>
+                <button onclick="switchTab('statement')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="statement">
+                    <i class="fas fa-file-invoice w-5 text-center text-amber-400"></i> रिडिङ बिल र सदस्य स्टेटमेन्ट
+                </button>
+                <button onclick="switchTab('members')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="members">
+                    <i class="fas fa-users w-5 text-center text-indigo-400"></i> मास्टर डाटाबेस र KYC
+                </button>
+
+                <div class="pt-2 pb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">आम्दानी, खर्च र ट्याङ्कर</div>
+
+                <button onclick="switchTab('income')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="income">
+                    <i class="fas fa-arrow-down-left-and-arrow-up-right-to-center w-5 text-center text-green-400"></i> आम्दानी इन्ट्री र रिपोर्ट
+                </button>
+                <button onclick="switchTab('expense')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="expense">
+                    <i class="fas fa-money-bill-wave w-5 text-center text-rose-400"></i> खर्च इन्ट्री र शीर्षक रिपोर्ट
+                </button>
+                <button onclick="switchTab('tanker')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="tanker">
+                    <i class="fas fa-truck-droplet w-5 text-center text-sky-400"></i> ट्याङ्कर पानी बिक्री र ज्याला
+                </button>
+
+                <div class="pt-2 pb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">सहकारी ऋण, बैंक र पेरोल</div>
+
+                <button onclick="switchTab('loan')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="loan">
+                    <i class="fas fa-hand-holding-usd w-5 text-center text-purple-400"></i> ऋण इन्ट्री, स्टेटमेन्ट र डाटाबेस
+                </button>
+                <button onclick="switchTab('bank')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="bank">
+                    <i class="fas fa-university w-5 text-center text-teal-400"></i> बैंक इन्ट्री र बैंक स्टेटमेन्ट
+                </button>
+                <button onclick="switchTab('payroll')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="payroll">
+                    <i class="fas fa-user-tie w-5 text-center text-orange-400"></i> कर्मचारी पेरोल (Payroll)
+                </button>
+
+                <div class="pt-2 pb-1 px-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">लेखा प्रतिवेदन र सेटिङ</div>
+
+                <button onclick="switchTab('reports')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="reports">
+                    <i class="fas fa-balance-scale w-5 text-center text-yellow-400"></i> वासलात, नाफा-नोक्सान र रिपोर्ट
+                </button>
+                <button onclick="switchTab('settings')" class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl font-medium text-slate-300 hover:bg-slate-800 hover:text-white transition" data-tab="settings">
+                    <i class="fas fa-cogs w-5 text-center text-slate-300"></i> मास्टर सेटिङ र ब्याकअप
+                </button>
+            </nav>
+
+            <!-- Operator Footer -->
+            <div class="p-3 bg-slate-950 border-t border-slate-800 text-xs flex items-center justify-between">
+                <div>
+                    <div class="text-slate-400">अपरेटर:</div>
+                    <div id="sidebar-operator-name" class="font-semibold text-white">व्यवस्थापक (Admin)</div>
+                </div>
+                <button onclick="exportFullBackup()" title="तुरुन्तै ब्याकअप डाउनलोड गर्नुहोस्" class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition">
+                    <i class="fas fa-download mr-1"></i>Backup
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main Workspace Content -->
+        <main class="flex-1 p-4 md:p-6 lg:p-8 max-w-full overflow-x-hidden">
+
+            <!-- ==================== 1. DASHBOARD ==================== -->
+            <section id="tab-dashboard" class="tab-section space-y-6">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <div>
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <h2 class="text-2xl font-bold text-slate-800">मुख्य ड्यासबोर्ड (Executive Summary)</h2>
+                            <span id="dashboard-full-bs-date" class="px-3 py-1 bg-amber-100 text-amber-900 border border-amber-300 rounded-full text-xs font-extrabold">
+                                <i class="far fa-calendar-check mr-1 text-amber-700"></i>२०८३ कार्तिक २१ गते, शनिबार (२०८३-०७-२१)
+                            </span>
+                        </div>
+                        <p class="text-sm text-slate-500">संस्थाको समग्र वित्तीय अवस्था, पानी महसुल संकलन, ऋण लगानी र मौज्दात विवरण</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="switchTab('reading')" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm transition">
+                            <i class="fas fa-plus-circle mr-1.5"></i>नयाँ रिडिङ इन्ट्री
+                        </button>
+                        <button onclick="switchTab('receipt')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-semibold shadow-sm transition">
+                            <i class="fas fa-hand-holding-dollar mr-1.5"></i>भुक्तानी रसिद काट्नुहोस्
+                        </button>
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-blue-600">
+                        <div class="text-xs font-semibold text-slate-500">कुल सदस्य संख्या</div>
+                        <div class="text-2xl font-extrabold text-slate-800 mt-1" id="kpi-members">०</div>
+                        <div class="text-xs text-blue-600 mt-1"><i class="fas fa-users mr-1"></i>सक्रिय धारा जडान</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-amber-500">
+                        <div class="text-xs font-semibold text-slate-500">उठ्न बाँकी बक्यौता</div>
+                        <div class="text-2xl font-extrabold text-amber-600 mt-1" id="kpi-dues">रु. ०</div>
+                        <div class="text-xs text-slate-500 mt-1">पानी महसुल बाँकी</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-emerald-600">
+                        <div class="text-xs font-semibold text-slate-500">कुल आम्दानी</div>
+                        <div class="text-2xl font-extrabold text-emerald-600 mt-1" id="kpi-income">रु. ०</div>
+                        <div class="text-xs text-slate-500 mt-1">सबै शीर्षक समेत</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-rose-600">
+                        <div class="text-xs font-semibold text-slate-500">कुल खर्च</div>
+                        <div class="text-2xl font-extrabold text-rose-600 mt-1" id="kpi-expense">रु. ०</div>
+                        <div class="text-xs text-slate-500 mt-1">सबै शीर्षक समेत</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-purple-600">
+                        <div class="text-xs font-semibold text-slate-500">लगानीमा रहेको ऋण</div>
+                        <div class="text-2xl font-extrabold text-purple-600 mt-1" id="kpi-loan">रु. ०</div>
+                        <div class="text-xs text-slate-500 mt-1">बाँकी साँवा रकम</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 border-l-4 border-l-teal-600">
+                        <div class="text-xs font-semibold text-slate-500">नगद + बैंक मौज्दात</div>
+                        <div class="text-2xl font-extrabold text-teal-700 mt-1" id="kpi-cash-bank">रु. ०</div>
+                        <div class="text-xs text-slate-500 mt-1" id="kpi-cash-bank-split">नगद: ० | बैंक: ०</div>
+                    </div>
+                </div>
+
+                <!-- Charts & Recent Logs -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <div class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                            <i class="fas fa-chart-bar text-blue-600"></i> शीर्षकगत आम्दानी र खर्च तुलनात्मक विवरण
+                        </h3>
+                        <div class="h-72">
+                            <canvas id="financeChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+                        <h3 class="font-bold text-slate-800 mb-3 flex items-center gap-2">
+                            <i class="fas fa-history text-emerald-600"></i> हालैका कारोबारहरू
+                        </h3>
+                        <div id="recent-activities" class="flex-1 overflow-y-auto space-y-2.5 max-h-72 pr-1 text-sm">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 2. MONTHLY METER READING ENTRY ==================== -->
+            <section id="tab-reading" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-4 mb-5 gap-2">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-tachometer-alt text-blue-600 mr-2"></i>मासिक मिटर रिडिङ अङ्क इन्ट्री</h2>
+                            <p class="text-xs text-slate-500">रिडिङ सेभ गर्नासाथ बिल बन्छ र सदस्यलाई WhatsApp / SIM SMS पठाउने विकल्प खुल्छ</p>
+                        </div>
+                        <span class="text-xs bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg font-semibold border border-blue-200" id="tariff-info-badge">
+                            न्यूनतम ६ युनिट: रु. २५० | अतिरिक्त: रु. १४०/युनिट
+                        </span>
+                    </div>
+
+                    <form id="reading-form" onsubmit="saveMeterReading(event)" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">नेपाली मिति (स्वचालित)</label>
+                            <input type="text" id="read-date" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-blue-700 focus:ring-2 focus:ring-blue-500 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">रिडिङ महिना</label>
+                            <select id="read-month" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="बैशाख">बैशाख</option>
+                                <option value="जेठ">जेठ</option>
+                                <option value="असार">असार</option>
+                                <option value="श्रावण">श्रावण</option>
+                                <option value="भदौ">भदौ</option>
+                                <option value="असोज">असोज</option>
+                                <option value="कार्तिक" selected>कार्तिक</option>
+                                <option value="मंसिर">मंसिर</option>
+                                <option value="पुष">पुष</option>
+                                <option value="माघ">माघ</option>
+                                <option value="फाल्गुन">फाल्गुन</option>
+                                <option value="चैत्र">चैत्र</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">सदस्य छान्नुहोस् (नाम / मिटर नं.)</label>
+                            <select id="read-member" onchange="onSelectReadingMember()" required class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none">
+                                <option value="">-- सदस्य छान्नुहोस् --</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">अघिल्लो मिटर अङ्क (Previous)</label>
+                            <input type="number" step="0.01" id="read-prev" readonly class="w-full px-3.5 py-2.5 bg-slate-100 border border-slate-300 rounded-xl font-bold text-slate-600">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">हालको मिटर अङ्क (Current) *</label>
+                            <input type="number" step="0.01" id="read-curr" oninput="calculateReadingBill()" required placeholder="नयाँ अङ्क हाल्नुहोस्" class="w-full px-3.5 py-2.5 bg-white border-2 border-blue-400 rounded-xl font-bold text-lg text-slate-900 focus:ring-2 focus:ring-blue-600 outline-none">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">खपत युनिट (Consumed Units)</label>
+                            <input type="number" step="0.01" id="read-units" readonly class="w-full px-3.5 py-2.5 bg-blue-50 border border-blue-200 rounded-xl font-extrabold text-blue-800">
+                        </div>
+
+                        <!-- Auto Calculated Breakdown Box -->
+                        <div class="md:col-span-3 bg-slate-50 p-4 rounded-xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                            <div>
+                                <span class="text-xs text-slate-500 block">चालु महिनाको महसुल</span>
+                                <span class="text-lg font-bold text-slate-800" id="calc-current-charge">रु. ०.००</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-500 block">अघिल्लो बाँकी बक्यौता</span>
+                                <span class="text-lg font-bold text-amber-600" id="calc-prev-due">रु. ०.००</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-500 block">स्वचालित जरिमाना (Fine)</span>
+                                <span class="text-lg font-bold text-rose-600" id="calc-fine">रु. ०.००</span>
+                            </div>
+                            <div class="bg-blue-600 text-white p-2.5 rounded-xl">
+                                <span class="text-xs text-blue-100 block">कुल तिर्नुपर्ने जम्मा रकम</span>
+                                <span class="text-xl font-extrabold" id="calc-grand-total">रु. ०.००</span>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-3 flex justify-end gap-3 pt-2">
+                            <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md transition flex items-center gap-2">
+                                <i class="fas fa-save"></i> रिडिङ सेभ गर्नुहोस् र SMS/WhatsApp पठाउनुहोस्
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Recent Readings Table -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-3">हालै गरिएका मिटर रिडिङ सूची</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                                    <th class="p-3">मिति</th>
+                                    <th class="p-3">महिना</th>
+                                    <th class="p-3">सदस्यको नाम</th>
+                                    <th class="p-3">अघिल्लो/हालको</th>
+                                    <th class="p-3">युनिट</th>
+                                    <th class="p-3">महसुल</th>
+                                    <th class="p-3">जरिमाना</th>
+                                    <th class="p-3">कुल बिल</th>
+                                    <th class="p-3 text-center">कार्य</th>
+                                </tr>
+                            </thead>
+                            <tbody id="readings-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 3. PAYMENT RECEIPT ==================== -->
+            <section id="tab-receipt" class="tab-section hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Payment Form -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
+                            <i class="fas fa-receipt text-emerald-600 mr-2"></i>भुक्तानी रसिद (Payment Receipt Entry)
+                        </h2>
+                        <form id="payment-form" onsubmit="savePaymentReceipt(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1">रसिद मिति (स्वचालित)</label>
+                                    <input type="text" id="pay-date" required class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-300 rounded-xl font-bold text-emerald-700">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1">भुक्तानी माध्यम</label>
+                                    <select id="pay-mode" onchange="toggleBankSelect('pay-mode', 'pay-bank-div')" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl">
+                                        <option value="नगद (Cash)">नगद (Cash)</option>
+                                        <option value="बैंक / QR (Bank)">बैंक / QR (Bank)</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="pay-bank-div" class="hidden">
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">बैंक खाता छान्नुहोस्</label>
+                                <select id="pay-bank-id" class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl"></select>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">सदस्य छान्नुहोस् *</label>
+                                <select id="pay-member" onchange="onSelectPaymentMember()" required class="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl">
+                                    <option value="">-- सदस्य छान्नुहोस् --</option>
+                                </select>
+                            </div>
+
+                            <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 flex justify-between items-center">
+                                <div>
+                                    <span class="text-xs text-amber-800 block">सदस्यको तिर्न बाँकी कुल बक्यौता:</span>
+                                    <span class="text-2xl font-extrabold text-amber-700" id="pay-current-due">रु. ०.००</span>
+                                </div>
+                                <button type="button" onclick="fillFullDue()" class="px-3 py-1.5 bg-amber-600 text-white text-xs font-bold rounded-lg hover:bg-amber-700">
+                                    पूरा रकम भर्नुहोस्
+                                </button>
+                            </div>
+
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1">बुझाएको रकम (Paid Amount) *</label>
+                                    <input type="number" step="0.01" id="pay-amount" required class="w-full px-3.5 py-2.5 border-2 border-emerald-500 rounded-xl font-bold text-lg text-emerald-800">
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1">छुट रकम (Discount, यदि भए)</label>
+                                    <input type="number" step="0.01" id="pay-discount" value="0" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-1">कैफियत (Remarks)</label>
+                                <input type="text" id="pay-remarks" placeholder="पानी महसुल भुक्तानी..." class="w-full px-3.5 py-2.5 border border-slate-300 rounded-xl">
+                            </div>
+
+                            <button type="submit" class="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition">
+                                <i class="fas fa-check-circle mr-1.5"></i>भुक्तानी रसिद सुरक्षित र प्रिन्ट गर्नुहोस्
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Live Printable Receipt Preview -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+                        <div id="receipt-preview-box" class="border-2 border-dashed border-slate-300 p-5 rounded-xl bg-slate-50/50">
+                            <div class="text-center text-slate-400 py-16">
+                                <i class="fas fa-print text-4xl mb-2"></i>
+                                <p>भुक्तानी सेभ गरेपछि यहाँ आधिकारिक रसिद देखिनेछ</p>
+                            </div>
+                        </div>
+                        <button onclick="printElement('receipt-preview-box')" class="mt-4 w-full py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-xl transition">
+                            <i class="fas fa-print mr-2"></i>रसिद प्रिन्ट गर्नुहोस् (Print Receipt)
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 4. READING BILL & MEMBER STATEMENT ==================== -->
+            <section id="tab-statement" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-slate-100 pb-4 mb-5">
+                        <div class="flex-1">
+                            <label class="block text-sm font-semibold text-slate-700 mb-1">सदस्य छान्नुहोस् (मेम्बरवाइज स्टेटमेन्ट / रिडिङ बिल)</label>
+                            <select id="stmt-member" onchange="renderMemberStatement()" class="w-full md:w-96 px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl font-medium">
+                                <option value="">-- सदस्य छान्नुहोस् --</option>
+                            </select>
+                        </div>
+                        <div class="flex gap-2">
+                            <button onclick="printElement('member-statement-print')" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-sm shadow-sm">
+                                <i class="fas fa-print mr-1.5"></i>लोगो सहित स्टेटमेन्ट प्रिन्ट गर्नुहोस्
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Printable Member Statement Area -->
+                    <div id="member-statement-print" class="bg-white p-4 rounded-xl">
+                        <!-- Header injected dynamically with Org Logo -->
+                        <div id="stmt-org-header"></div>
+                        <div id="stmt-member-info" class="my-4"></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left border border-slate-300 border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-100 border-b border-slate-300">
+                                        <th class="p-2.5 border border-slate-300">मिति</th>
+                                        <th class="p-2.5 border border-slate-300">विवरण (Particulars)</th>
+                                        <th class="p-2.5 border border-slate-300 text-right">रिडिङ / युनिट</th>
+                                        <th class="p-2.5 border border-slate-300 text-right">बिल रकम (Dr)</th>
+                                        <th class="p-2.5 border border-slate-300 text-right">बुझाएको (Cr)</th>
+                                        <th class="p-2.5 border border-slate-300 text-right">बाँकी मौज्दात</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="stmt-table-body">
+                                    <tr><td colspan="6" class="p-6 text-center text-slate-400">कृपया माथिबाट सदस्य छान्नुहोस्</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div id="stmt-org-footer" class="mt-8"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 5. MASTER DATABASE & KYC ==================== -->
+            <section id="tab-members" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
+                        <i class="fas fa-user-plus text-indigo-600 mr-2"></i>नयाँ सदस्य दर्ता तथा KYC विवरण
+                    </h2>
+                    <form id="member-form" onsubmit="saveMemberKYC(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <input type="hidden" id="mem-edit-id">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">सदस्य नं. / कोड *</label>
+                            <input type="text" id="mem-code" required placeholder="उदा: M-104" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">सदस्यको पूरा नाम *</label>
+                            <input type="text" id="mem-name" required placeholder="राम बहादुर थापा" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">बुवा / पतिको नाम</label>
+                            <input type="text" id="mem-guardian" placeholder="हरि बहादुर थापा" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">नागरिकता नं. (KYC)</label>
+                            <input type="text" id="mem-citizenship" placeholder="२७-०१-७५-०१२३४" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">मोबाइल / WhatsApp नं. *</label>
+                            <input type="text" id="mem-phone" required placeholder="9841000000" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">ठेगाना / टोल</label>
+                            <input type="text" id="mem-address" placeholder="वडा नं. ३, पुरानागाउँ" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">मिटर नं. *</label>
+                            <input type="text" id="mem-meter" required placeholder="MTR-504" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">सुरुवाती मिटर अङ्क</label>
+                            <input type="number" step="0.01" id="mem-init-read" value="0" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">अघिल्लो बाँकी (Opening Due)</label>
+                            <input type="number" step="0.01" id="mem-open-due" value="0" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">सदस्य फोटो (KYC Photo)</label>
+                            <input type="file" id="mem-photo" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:text-indigo-700">
+                        </div>
+                        <div class="sm:col-span-2 flex items-end justify-end gap-2">
+                            <button type="button" onclick="resetMemberForm()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl text-sm font-semibold">रद्द (Clear)</button>
+                            <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-sm">
+                                <i class="fas fa-save mr-1.5"></i>सदस्य KYC सेभ गर्नुहोस्
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Member Directory -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col sm:flex-row justify-between items-center gap-3 mb-4">
+                        <h3 class="font-bold text-slate-800">सदस्य मास्टर डाटाबेस सूची</h3>
+                        <input type="text" id="member-search" onkeyup="renderMembersTable()" placeholder="नाम, फोन वा मिटर नं. ले खोज्नुहोस्..." class="w-full sm:w-72 px-3.5 py-2 border border-slate-300 rounded-xl text-sm">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                                    <th class="p-3">फोटो / कोड</th>
+                                    <th class="p-3">नाम र अभिभावक</th>
+                                    <th class="p-3">नागरिकता / ठेगाना</th>
+                                    <th class="p-3">मोबाइल नं.</th>
+                                    <th class="p-3">मिटर नं. (अङ्क)</th>
+                                    <th class="p-3 text-right">बाँकी बक्यौता</th>
+                                    <th class="p-3 text-center">कार्य</th>
+                                </tr>
+                            </thead>
+                            <tbody id="members-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 6. EXPENSE ENTRY & CATEGORY REPORT ==================== -->
+            <section id="tab-expense" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
+                        <i class="fas fa-money-bill-wave text-rose-600 mr-2"></i>खर्च इन्ट्री (Expense Entry)
+                    </h2>
+                    <form id="expense-form" onsubmit="saveTransaction(event, 'expense')" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">मिति (स्वचालित)</label>
+                            <input type="text" id="exp-date" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-rose-700">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">खर्चको शीर्ष प्रकार *</label>
+                            <select id="exp-category" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-medium">
+                                <option value="मर्मत खर्च">मर्मत खर्च</option>
+                                <option value="विद्युत महसुल">विद्युत महसुल</option>
+                                <option value="तलब">तलब</option>
+                                <option value="गाडीभाडा">गाडीभाडा</option>
+                                <option value="स्टेशनरी">स्टेशनरी</option>
+                                <option value="मालसामान खरिद">मालसामान खरिद</option>
+                                <option value="प्रिन्ट">प्रिन्ट</option>
+                                <option value="ट्याङ्कर ज्याला खर्च">ट्याङ्कर ज्याला खर्च</option>
+                                <option value="अन्य खर्चहरू">अन्य खर्चहरू</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">रकम (रु.) *</label>
+                            <input type="number" step="0.01" id="exp-amount" required placeholder="0.00" class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">भुक्तानी माध्यम</label>
+                            <select id="exp-mode" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl">
+                                <option value="नगद (Cash)">नगद (Cash)</option>
+                                <option value="बैंक (Bank)">बैंक (Bank)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">विवरण / कैफियत</label>
+                            <input type="text" id="exp-remarks" placeholder="खर्चको विवरण..." class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+                        <div class="sm:col-span-2 lg:col-span-5 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl shadow-sm">
+                                <i class="fas fa-plus-circle mr-1.5"></i>खर्च दर्ता गर्नुहोस्
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Category-wise Filterable Expense Report -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
+                        <h3 class="font-bold text-lg text-slate-800">खर्च शीर्षक अनुसारको रिपोर्ट (Category-wise Expense Summary & Ledger)</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <select id="filter-exp-cat" onchange="renderExpenseReport()" class="px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                                <option value="ALL">सबै खर्च शीर्षकहरू</option>
+                                <option value="मर्मत खर्च">मर्मत खर्च</option>
+                                <option value="विद्युत महसुल">विद्युत महसुल</option>
+                                <option value="तलब">तलब</option>
+                                <option value="गाडीभाडा">गाडीभाडा</option>
+                                <option value="स्टेशनरी">स्टेशनरी</option>
+                                <option value="मालसामान खरिद">मालसामान खरिद</option>
+                                <option value="प्रिन्ट">प्रिन्ट</option>
+                                <option value="ट्याङ्कर ज्याला खर्च">ट्याङ्कर ज्याला खर्च</option>
+                                <option value="अन्य खर्चहरू">अन्य खर्चहरू</option>
+                            </select>
+                            <button onclick="printElement('expense-report-print')" class="px-4 py-2 bg-slate-800 text-white rounded-xl text-sm font-semibold">
+                                <i class="fas fa-print mr-1"></i>रिपोर्ट प्रिन्ट
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="expense-report-print">
+                        <!-- Category Sub-totals Grid -->
+                        <div id="expense-category-cards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5"></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left border border-slate-200 border-collapse">
+                                <thead>
+                                    <tr class="bg-rose-50 text-rose-900 border-b border-slate-200">
+                                        <th class="p-3">मिति</th>
+                                        <th class="p-3">खर्चको शीर्षक</th>
+                                        <th class="p-3">माध्यम</th>
+                                        <th class="p-3">विवरण</th>
+                                        <th class="p-3 text-right">रकम (रु.)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="expense-table-body" class="divide-y divide-slate-100"></tbody>
+                                <tfoot>
+                                    <tr class="bg-slate-100 font-extrabold text-slate-900">
+                                        <td colspan="4" class="p-3 text-right">छानिएको शीर्षकको कुल जम्मा खर्च:</td>
+                                        <td class="p-3 text-right text-rose-700 text-base" id="expense-filtered-total">रु. ०.००</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 7. INCOME ENTRY & CATEGORY REPORT ==================== -->
+            <section id="tab-income" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
+                        <i class="fas fa-coins text-emerald-600 mr-2"></i>आम्दानी इन्ट्री (Income Entry)
+                    </h2>
+                    <form id="income-form" onsubmit="saveTransaction(event, 'income')" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">मिति (स्वचालित)</label>
+                            <input type="text" id="inc-date" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-emerald-700">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">आम्दानीको शीर्षक *</label>
+                            <select id="inc-category" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl font-medium">
+                                <option value="नयाँ मिटर जडान">नयाँ मिटर जडान</option>
+                                <option value="सेवा शुल्क आम्दानी">सेवा शुल्क आम्दानी</option>
+                                <option value="मर्मत आम्दानी">मर्मत आम्दानी</option>
+                                <option value="ऋण सेवा शुल्क आम्दानी">ऋण सेवा शुल्क आम्दानी</option>
+                                <option value="बचत ब्याज आम्दानी">बचत ब्याज आम्दानी</option>
+                                <option value="ऋण ब्याज आम्दानी">ऋण ब्याज आम्दानी</option>
+                                <option value="पानी महसुल आम्दानी">पानी महसुल आम्दानी</option>
+                                <option value="ट्याङ्कर पानी बिक्री आम्दानी">ट्याङ्कर पानी बिक्री आम्दानी</option>
+                                <option value="अन्य आम्दानी">अन्य आम्दानी</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">रकम (रु.) *</label>
+                            <input type="number" step="0.01" id="inc-amount" required placeholder="0.00" class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">प्राप्त माध्यम</label>
+                            <select id="inc-mode" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl">
+                                <option value="नगद (Cash)">नगद (Cash)</option>
+                                <option value="बैंक (Bank)">बैंक (Bank)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">विवरण / कैफियत</label>
+                            <input type="text" id="inc-remarks" placeholder="आम्दानीको विवरण..." class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+                        <div class="sm:col-span-2 lg:col-span-5 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm">
+                                <i class="fas fa-plus-circle mr-1.5"></i>आम्दानी दर्ता गर्नुहोस्
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Category-wise Filterable Income Report -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-slate-100 pb-3">
+                        <h3 class="font-bold text-lg text-slate-800">आम्दानी शीर्षक अनुसारको रिपोर्ट (Category-wise Income Summary & Ledger)</h3>
+                        <div class="flex flex-wrap gap-2">
+                            <select id="filter-inc-cat" onchange="renderIncomeReport()" class="px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                                <option value="ALL">सबै आम्दानी शीर्षकहरू</option>
+                                <option value="पानी महसुल आम्दानी">पानी महसुल आम्दानी</option>
+                                <option value="नयाँ मिटर जडान">नयाँ मिटर जडान</option>
+                                <option value="सेवा शुल्क आम्दानी">सेवा शुल्क आम्दानी</option>
+                                <option value="मर्मत आम्दानी">मर्मत आम्दानी</option>
+                                <option value="ऋण सेवा शुल्क आम्दानी">ऋण सेवा शुल्क आम्दानी</option>
+                                <option value="बचत ब्याज आम्दानी">बचत ब्याज आम्दानी</option>
+                                <option value="ऋण ब्याज आम्दानी">ऋण ब्याज आम्दानी</option>
+                                <option value="ट्याङ्कर पानी बिक्री आम्दानी">ट्याङ्कर पानी बिक्री आम्दानी</option>
+                                <option value="अन्य आम्दानी">अन्य आम्दानी</option>
+                            </select>
+                            <button onclick="printElement('income-report-print')" class="px-4 py-2 bg-slate-800 text-white rounded-xl text-sm font-semibold">
+                                <i class="fas fa-print mr-1"></i>रिपोर्ट प्रिन्ट
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="income-report-print">
+                        <div id="income-category-cards" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5"></div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm text-left border border-slate-200 border-collapse">
+                                <thead>
+                                    <tr class="bg-emerald-50 text-emerald-900 border-b border-slate-200">
+                                        <th class="p-3">मिति</th>
+                                        <th class="p-3">आम्दानीको शीर्षक</th>
+                                        <th class="p-3">माध्यम</th>
+                                        <th class="p-3">विवरण</th>
+                                        <th class="p-3 text-right">रकम (रु.)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="income-table-body" class="divide-y divide-slate-100"></tbody>
+                                <tfoot>
+                                    <tr class="bg-slate-100 font-extrabold text-slate-900">
+                                        <td colspan="4" class="p-3 text-right">छानिएको शीर्षकको कुल जम्मा आम्दानी:</td>
+                                        <td class="p-3 text-right text-emerald-700 text-base" id="income-filtered-total">रु. ०.००</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 8. TANKER WATER SALES & AUTO WAGE ==================== -->
+            <section id="tab-tanker" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-3 mb-4 gap-2">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800"><i class="fas fa-truck-droplet text-sky-600 mr-2"></i>गाडी / ट्याङ्कर पानी बिक्री तथा प्रतिलिटर ज्याला हिसाब</h2>
+                            <p class="text-xs text-slate-500">पानी बिक्री इन्ट्री गर्नासाथ बिक्री रकम आम्दानीमा र प्रतिलिटर ज्याला स्वतः खर्चमा चढ्छ</p>
+                        </div>
+                        <span class="text-xs bg-sky-50 text-sky-800 px-3 py-1.5 rounded-lg font-bold border border-sky-200" id="tanker-rate-badge">
+                            बिक्री दर: रु. ०.५०/लिटर | ज्याला दर: रु. ०.१०/लिटर
+                        </span>
+                    </div>
+
+                    <form id="tanker-form" onsubmit="saveTankerSale(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">मिति (स्वचालित)</label>
+                            <input type="text" id="tnk-date" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-sky-700">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">गाडी नं. / खरिदकर्ताको नाम *</label>
+                            <input type="text" id="tnk-customer" required placeholder="बा २ ख ४५१२ / होटल हिमालय" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">परिमाण (लिटरमा - Liters) *</label>
+                            <input type="number" step="1" id="tnk-liters" oninput="calculateTankerTotals()" required placeholder="5000" class="w-full px-3 py-2 border-2 border-sky-400 rounded-xl font-bold text-lg">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">चालक / कामदारको नाम</label>
+                            <input type="text" id="tnk-worker" placeholder="चालकको नाम" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                        </div>
+
+                        <div class="sm:col-span-2 lg:col-span-4 bg-sky-50/70 p-4 rounded-xl border border-sky-200 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <span class="text-xs text-slate-500 block">कुल पानी बिक्री आम्दानी:</span>
+                                <span class="text-xl font-extrabold text-emerald-700" id="tnk-total-sale">रु. ०.००</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-500 block">स्वचालित प्रतिलिटर ज्याला खर्च:</span>
+                                <span class="text-xl font-extrabold text-rose-600" id="tnk-total-wage">रु. ०.००</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-500 block">खुद बचत (Net Margin):</span>
+                                <span class="text-xl font-extrabold text-sky-800" id="tnk-net-profit">रु. ०.००</span>
+                            </div>
+                        </div>
+
+                        <div class="sm:col-span-2 lg:col-span-4 flex justify-end">
+                            <button type="submit" class="px-6 py-2.5 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl shadow-sm">
+                                <i class="fas fa-check-double mr-1.5"></i>बिक्री र ज्याला दुवै पोस्ट गर्नुहोस्
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Tanker Sales Log -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-3">ट्याङ्कर पानी बिक्री तथा ज्याला विवरण</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                                    <th class="p-3">मिति</th>
+                                    <th class="p-3">गाडी / खरिदकर्ता</th>
+                                    <th class="p-3">कामदार</th>
+                                    <th class="p-3 text-right">लिटर</th>
+                                    <th class="p-3 text-right">बिक्री आम्दानी</th>
+                                    <th class="p-3 text-right">ज्याला खर्च</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tanker-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 9. LOAN MANAGEMENT ==================== -->
+            <section id="tab-loan" class="tab-section hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Loan Disbursement Form -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h2 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
+                            <i class="fas fa-hand-holding-usd text-purple-600 mr-2"></i>नयाँ ऋण लगानी (Loan Disbursement)
+                        </h2>
+                        <form id="loan-form" onsubmit="saveLoanDisbursement(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">लगानी मिति (स्वचालित)</label>
+                                    <input type="text" id="loan-date" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-purple-700">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">ऋणी सदस्य छान्नुहोस् *</label>
+                                    <select id="loan-member" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl"></select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">ऋण रकम (Principal रु.) *</label>
+                                    <input type="number" step="0.01" id="loan-amount" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">वार्षिक ब्याजदर (%)</label>
+                                    <input type="number" step="0.1" id="loan-rate" required class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">ऋण सेवा शुल्क (%)</label>
+                                    <input type="number" step="0.1" id="loan-service-pct" value="1" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">ब्याज लाग्न सुरु हुने दिन (लगानी पछिको दिन)</label>
+                                    <input type="number" id="loan-grace-days" class="w-full px-3 py-2 bg-purple-50 border border-purple-200 rounded-xl font-bold text-purple-800">
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full py-2.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-sm">
+                                ऋण लगानी स्वीकृत गर्नुहोस्
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Loan Repayment Form -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h2 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
+                            <i class="fas fa-money-check-alt text-emerald-600 mr-2"></i>ऋण साँवा तथा ब्याज असुली (Repayment)
+                        </h2>
+                        <form id="loan-repay-form" onsubmit="saveLoanRepayment(event)" class="space-y-4">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">असुली मिति</label>
+                                    <input type="text" id="repay-date" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-emerald-700">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">सक्रिय ऋण खाता छान्नुहोस् *</label>
+                                    <select id="repay-loan-id" onchange="onSelectLoanForRepay()" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl"></select>
+                                </div>
+                            </div>
+                            <div id="loan-accrued-info" class="p-3 bg-purple-50 rounded-xl border border-purple-200 text-xs text-purple-900">
+                                ऋण छान्नुहोस् — ब्याज लाग्ने नियम अनुसार पाकेको ब्याज स्वतः गणना हुनेछ।
+                            </div>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">साँवा असुली (Principal Paid)</label>
+                                    <input type="number" step="0.01" id="repay-principal" value="0" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-600 mb-1">ब्याज असुली (Interest Paid)</label>
+                                    <input type="number" step="0.01" id="repay-interest" value="0" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-emerald-700">
+                                </div>
+                            </div>
+                            <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-sm">
+                                साँवा / ब्याज रसिद काट्नुहोस्
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Loan Database Table -->
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-3">ऋण डाटाबेस तथा स्टेटमेन्ट (Loan Database)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                                    <th class="p-3">ऋण नं.</th>
+                                    <th class="p-3">लगानी मिति</th>
+                                    <th class="p-3">ऋणी सदस्य</th>
+                                    <th class="p-3 text-right">लगानी साँवा</th>
+                                    <th class="p-3 text-right">असुल साँवा</th>
+                                    <th class="p-3 text-right">बाँकी साँवा</th>
+                                    <th class="p-3 text-center">ब्याजदर / नियम</th>
+                                    <th class="p-3 text-center">अवस्था</th>
+                                </tr>
+                            </thead>
+                            <tbody id="loan-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 10. BANK MANAGEMENT ==================== -->
+            <section id="tab-bank" class="tab-section hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Add Bank Account -->
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-2 mb-3">नयाँ बैंक खाता दर्ता</h3>
+                        <form onsubmit="saveBankAccount(event)" class="space-y-3">
+                            <input type="text" id="bank-name" required placeholder="बैंकको नाम (उदा: नेपाल बैंक लि.)" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                            <input type="text" id="bank-acc-no" required placeholder="खाता नं. (Account Number)" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                            <input type="number" step="0.01" id="bank-open-bal" required placeholder="सुरुवाती मौज्दात (Opening Balance)" class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                            <button type="submit" class="w-full py-2 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-xl text-sm">बैंक खाता थप्नुहोस्</button>
+                        </form>
+                    </div>
+
+                    <!-- Bank Deposit / Withdraw Entry -->
+                    <div class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                        <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-2 mb-3">बैंक कारोबार इन्ट्री (Deposit / Withdraw)</h3>
+                        <form onsubmit="saveBankTransaction(event)" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div>
+                                <label class="text-xs font-bold text-slate-600">मिति</label>
+                                <input type="text" id="btx-date" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl font-bold text-teal-700 text-sm">
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-600">बैंक खाता</label>
+                                <select id="btx-bank-id" required class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm"></select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-600">कारोबार प्रकार</label>
+                                <select id="btx-type" class="w-full px-3 py-2 bg-white border border-slate-300 rounded-xl text-sm">
+                                    <option value="deposit">जम्मा (Deposit)</option>
+                                    <option value="withdraw">झिकेको (Withdraw)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="text-xs font-bold text-slate-600">रकम (रु.)</label>
+                                <input type="number" step="0.01" id="btx-amount" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-sm">
+                            </div>
+                            <div class="sm:col-span-3">
+                                <input type="text" id="btx-remarks" placeholder="चेक नं. / भौचर विवरण..." class="w-full px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                            </div>
+                            <div>
+                                <button type="submit" class="w-full py-2 bg-slate-800 hover:bg-slate-900 text-white font-bold rounded-xl text-sm">इन्ट्री सेभ</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Bank Accounts Summary Cards & Statement -->
+                <div id="bank-cards-container" class="grid grid-cols-1 sm:grid-cols-3 gap-4"></div>
+
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <h3 class="font-bold text-slate-800 mb-3">बैंक स्टेटमेन्ट (Bank Ledger Statement)</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                                    <th class="p-3">मिति</th>
+                                    <th class="p-3">बैंकको नाम</th>
+                                    <th class="p-3">विवरण</th>
+                                    <th class="p-3 text-right">जम्मा (Deposit)</th>
+                                    <th class="p-3 text-right">झिकेको (Withdraw)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bank-tx-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 11. PAYROLL MANAGEMENT ==================== -->
+            <section id="tab-payroll" class="tab-section hidden space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
+                        <i class="fas fa-user-tie text-orange-600 mr-2"></i>कर्मचारी व्यवस्थापन तथा मासिक पेरोल (Payroll)
+                    </h2>
+                    <form onsubmit="saveStaff(event)" class="grid grid-cols-1 sm:grid-cols-5 gap-3 mb-6">
+                        <input type="text" id="stf-name" required placeholder="कर्मचारीको नाम" class="px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                        <input type="text" id="stf-post" required placeholder="पद (उदा: मिटर रिडर)" class="px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                        <input type="number" id="stf-salary" required placeholder="मासिक तलब (रु.)" class="px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                        <input type="number" id="stf-allowance" value="0" placeholder="भत्ता (Allowance)" class="px-3 py-2 border border-slate-300 rounded-xl text-sm">
+                        <button type="submit" class="py-2 bg-orange-600 hover:bg-orange-700 text-white font-bold rounded-xl text-sm">कर्मचारी थप्नुहोस्</button>
+                    </form>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left border-collapse">
+                            <thead>
+                                <tr class="bg-orange-50 text-orange-950 border-b border-orange-200">
+                                    <th class="p-3">कर्मचारीको नाम</th>
+                                    <th class="p-3">पद</th>
+                                    <th class="p-3 text-right">आधारभूत तलब</th>
+                                    <th class="p-3 text-right">भत्ता</th>
+                                    <th class="p-3 text-right">कुल भुक्तानी योग्य</th>
+                                    <th class="p-3 text-center">मासिक तलब भुक्तानी</th>
+                                </tr>
+                            </thead>
+                            <tbody id="payroll-table-body" class="divide-y divide-slate-100"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 12. FINANCIAL REPORTS (P&L, BALANCE SHEET, TRIAL, CASHFLOW) ==================== -->
+            <section id="tab-reports" class="tab-section hidden space-y-6">
+                <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+                    <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4 mb-5">
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="renderFinancialReport('pl')" class="rep-tab-btn px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-bold" data-rep="pl">नाफा नोक्सान / आय-व्यय (P&L)</button>
+                            <button onclick="renderFinancialReport('bs')" class="rep-tab-btn px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold" data-rep="bs">वासलात (Balance Sheet)</button>
+                            <button onclick="renderFinancialReport('tb')" class="rep-tab-btn px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold" data-rep="tb">ट्रायल ब्यालेन्स (Trial Balance)</button>
+                            <button onclick="renderFinancialReport('cf')" class="rep-tab-btn px-4 py-2 bg-slate-100 text-slate-700 rounded-xl text-sm font-bold" data-rep="cf">क्याश फ्लो स्टेटमेन्ट</button>
+                        </div>
+                        <button onclick="printElement('financial-report-print')" class="px-5 py-2.5 bg-slate-900 hover:bg-black text-white rounded-xl text-sm font-bold shadow">
+                            <i class="fas fa-print mr-2"></i>आधिकारिक रिपोर्ट प्रिन्ट गर्नुहोस्
+                        </button>
+                    </div>
+
+                    <!-- Official Report Container with Logo & Operator Signature -->
+                    <div id="financial-report-print" class="bg-white p-6 border border-slate-200 rounded-xl max-w-4xl mx-auto">
+                        <!-- Dynamic Org Letterhead -->
+                        <div id="rep-letterhead"></div>
+                        <!-- Dynamic Report Body -->
+                        <div id="rep-body-content" class="my-6"></div>
+                        <!-- Dynamic Operator Signature Footer -->
+                        <div id="rep-signature-footer" class="mt-12 pt-6"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ==================== 13. ONE-PLACE MASTER SETTINGS & BACKUP ==================== -->
+            <section id="tab-settings" class="tab-section hidden space-y-6">
+                <form onsubmit="saveMasterSettings(event)" class="space-y-6">
+                    <!-- Organization & Letterhead Info -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
+                            <i class="fas fa-building text-blue-600 mr-2"></i>१. संस्थाको विवरण, लोगो र अपरेटर सेटिङ
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">संस्थाको नाम *</label>
+                                <input type="text" id="set-org-name" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">ठेगाना *</label>
+                                <input type="text" id="set-org-address" required class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">सम्पर्क फोन नं.</label>
+                                <input type="text" id="set-org-phone" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">अपरेटरको पूरा नाम (रिपोर्टमा आउने) *</label>
+                                <input type="text" id="set-operator-name" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-blue-700">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">अपरेटरको पद</label>
+                                <input type="text" id="set-operator-post" class="w-full px-3 py-2 border border-slate-300 rounded-xl">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">संस्थाको लोगो (Logo Image)</label>
+                                <input type="file" id="set-logo-file" accept="image/*" onchange="handleLogoUpload(event)" class="w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tariff, Fine, Loan & Tanker Rates -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
+                            <i class="fas fa-sliders-h text-emerald-600 mr-2"></i>२. महसुल दर, जरिमाना, ऋण ब्याज र ट्याङ्कर दर सेटिङ
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">न्यूनतम युनिट (Minimum Units)</label>
+                                <input type="number" id="set-min-units" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">न्यूनतम शुल्क (Minimum Charge रु.)</label>
+                                <input type="number" step="0.01" id="set-min-charge" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">अतिरिक्त प्रति युनिट दर (Extra Rate रु.)</label>
+                                <input type="number" step="0.01" id="set-extra-rate" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">बक्यौतामा लाग्ने जरिमाना (%)</label>
+                                <input type="number" step="0.1" id="set-fine-pct" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-rose-600">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">ऋणको वार्षिक ब्याजदर (%)</label>
+                                <input type="number" step="0.1" id="set-loan-rate" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-purple-700">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">ऋण ब्याज लाग्न सुरु हुने दिन (कति दिनपछि)</label>
+                                <input type="number" id="set-loan-start-days" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">ट्याङ्कर पानी बिक्री दर (प्रति लिटर रु.)</label>
+                                <input type="number" step="0.01" id="set-tanker-sale-rate" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-sky-700">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">ट्याङ्कर ज्याला दर (प्रति लिटर रु.)</label>
+                                <input type="number" step="0.01" id="set-tanker-wage-rate" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold text-rose-600">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Opening Balances & SMS Format -->
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                        <h2 class="text-xl font-bold text-slate-800 border-b border-slate-100 pb-3 mb-4">
+                            <i class="fas fa-wallet text-amber-600 mr-2"></i>३. ओपनिङ ब्यालेन्स, मिति समायोजन र SMS/WhatsApp फर्म्याट
+                        </h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">ओपनिङ नगद मौज्दात (Opening Cash रु.)</label>
+                                <input type="number" step="0.01" id="set-open-cash" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">ओपनिङ संस्थागत पूँजी (Capital Fund रु.)</label>
+                                <input type="number" step="0.01" id="set-open-capital" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">ओपनिङ ऋण मौज्दात (Opening Loan रु.)</label>
+                                <input type="number" step="0.01" id="set-open-loan" required class="w-full px-3 py-2 border border-slate-300 rounded-xl font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">नेपाली मिति समायोजन (Date Offset दिन: + वा -)</label>
+                                <input type="number" id="set-date-offset" value="0" class="w-full px-3 py-2 bg-amber-50 border border-amber-300 rounded-xl font-bold text-amber-900">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">मिटर रिडिङ पछि जाने म्यासेज फर्म्याट (उपलब्ध कोड: {org}, {name}, {month}, {units}, {bill}, {total}, {date})</label>
+                            <textarea id="set-sms-template" rows="3" class="w-full p-3 border border-slate-300 rounded-xl text-sm font-medium"></textarea>
+                        </div>
+
+                        <div class="mt-4 flex justify-end">
+                            <button type="submit" class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-md">
+                                <i class="fas fa-save mr-2"></i>सम्पूर्ण सेटिङ सुरक्षित गर्नुहोस्
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                <!-- Data Security, Cloud Sync & Backup -->
+                <div class="bg-slate-900 text-white p-6 rounded-2xl shadow-lg space-y-4">
+                    <h2 class="text-xl font-bold text-emerald-400">
+                        <i class="fas fa-shield-alt mr-2"></i>४. डेटा सुरक्षा, कम्प्युटर-मोबाइल लाइभ सिङ्क र ब्याकअप
+                    </h2>
+                    <p class="text-sm text-slate-300">
+                        तपाईंको डेटा कहिल्यै सस्पेन्ड नहोस् र नहराओस् भन्नका लागि यहाँबाट <strong>Full JSON Backup</strong> डाउनलोड गर्नुहोस्। साथै, मोबाइल र कम्प्युटरमा एकैसाथ लाइभ चलाउन आफ्नो निःशुल्क Google Firebase Config तल पेस्ट गर्न सक्नुहुन्छ।
+                    </p>
+                    <div class="flex flex-wrap gap-3 pt-2">
+                        <button type="button" onclick="exportFullBackup()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-sm">
+                            <i class="fas fa-download mr-1.5"></i>सम्पूण डेटा ब्याकअप डाउनलोड (.JSON)
+                        </button>
+                        <label class="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-sm cursor-pointer">
+                            <i class="fas fa-upload mr-1.5"></i>पुरानो ब्याकअप रिस्टोर गर्नुहोस् (.JSON)
+                            <input type="file" accept=".json" onchange="importFullBackup(event)" class="hidden">
+                        </label>
+                        <button type="button" onclick="resetToSampleData()" class="px-5 py-2.5 bg-rose-600/80 hover:bg-rose-600 text-white font-bold rounded-xl text-sm">
+                            <i class="fas fa-rotate-left mr-1.5"></i>नमुना डेटा रिसेट (Reset Demo)
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- ==================== WHATSAPP / SMS ALERT MODAL AFTER READING ==================== -->
+    <div id="sms-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4 no-print">
+        <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4 animate-fade-in">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fas fa-paper-plane text-emerald-600"></i> रिडिङ बिल म्यासेज पठाउनुहोस्
+                </h3>
+                <button onclick="closeSmsModal()" class="text-slate-400 hover:text-slate-700 text-xl">&times;</button>
+            </div>
+            <div class="text-sm text-slate-600">
+                प्राप्तकर्ता: <strong id="modal-rec-name" class="text-slate-900"></strong> (<span id="modal-rec-phone" class="font-mono text-blue-600"></span>)
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-slate-500 mb-1">तयार भएको म्यासेज (आवश्यक परे सम्पादन गर्नुहोस्):</label>
+                <textarea id="modal-sms-text" rows="5" class="w-full p-3 border border-slate-300 rounded-xl text-sm bg-slate-50 font-medium"></textarea>
+            </div>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <a id="btn-send-whatsapp" href="#" target="_blank" class="py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-center flex items-center justify-center gap-2 shadow">
+                    <i class="fab fa-whatsapp text-xl"></i> WhatsApp मा पठाउनुहोस्
+                </a>
+                <a id="btn-send-sim" href="#" class="py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-center flex items-center justify-center gap-2 shadow">
+                    <i class="fas fa-sms text-xl"></i> SIM SMS बाट पठाउनुहोस्
+                </a>
+            </div>
+            <button onclick="closeSmsModal()" class="w-full py-2 text-xs text-slate-500 hover:text-slate-800 font-semibold">बन्द गर्नुहोस्</button>
+        </div>
+    </div>
+
+    <!-- Hidden Print Staging Container -->
+    <div id="print-area" class="hidden"></div>
+
+    <!-- ==================== CORE JAVASCRIPT ENGINE ==================== -->
+    <script>
+        // ---------------------------------------------------------
+        // 1. AUTOMATIC NEPALI DATE (BIKRAM SAMBAT 2080-2090) ENGINE
+        // ---------------------------------------------------------
+        const nepaliDigits = ['०', '१', '२', '३', '४', '५', '६', '७', '८', '९'];
+        const nepaliMonths = ['बैशाख', 'जेठ', 'असार', 'श्रावण', 'भदौ', 'असोज', 'कार्तिक', 'मंसिर', 'पुष', 'माघ', 'फाल्गुन', 'चैत्र'];
+        const nepaliWeekdays = ['आइतबार', 'सोमबार', 'मंगलबार', 'बुधबार', 'बिहीबार', 'शुक्रबार', 'शनिबार'];
+
+        function toNepaliDigits(num) {
+            return String(num).replace(/\d/g, d => nepaliDigits[d]);
+        }
+
+        // Complete Bikram Sambat month-day lookup table (2080 to 2090 BS)
+        // Calibrated precisely so that 2026-11-07 AD (Saturday) = 2083-07-21 BS (२०८३ कार्तिक २१ गते, शनिबार)
+        const bsMonthDays = {
+            2080: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
+            2081: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
+            2082: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
+            2083: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
+            2084: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
+            2085: [31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 30],
+            2086: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
+            2087: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30],
+            2088: [31, 32, 31, 32, 31, 30, 30, 30, 29, 30, 29, 30],
+            2089: [31, 31, 32, 31, 31, 31, 30, 29, 30, 29, 30, 30],
+            2090: [31, 32, 31, 32, 31, 30, 30, 30, 29, 29, 30, 30]
+        };
+
+        function getTodayNepaliDateObj() {
+            // Exact anchor: 2026-11-07 AD = 2083-07-21 BS
+            const anchorAD = new Date(2026, 10, 7); // Month is 0-indexed (10 = November)
+            anchorAD.setHours(0, 0, 0, 0);
+
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+
+            const offsetDays = (typeof db !== 'undefined' && db.settings && db.settings.dateOffset) ? Number(db.settings.dateOffset) : 0;
+            let diffDays = Math.round((now - anchorAD) / (1000 * 60 * 60 * 24)) + offsetDays;
+
+            let y = 2083;
+            let m = 7; // Kartik
+            let d = 21;
+
+            if (diffDays >= 0) {
+                while (diffDays > 0 && bsMonthDays[y]) {
+                    const dim = bsMonthDays[y][m - 1];
+                    if (d + diffDays <= dim) {
+                        d += diffDays;
+                        diffDays = 0;
+                    } else {
+                        diffDays -= (dim - d + 1);
+                        d = 1;
+                        m++;
+                        if (m > 12) { m = 1; y++; }
+                    }
+                }
+            } else {
+                diffDays = Math.abs(diffDays);
+                while (diffDays > 0 && bsMonthDays[y]) {
+                    if (d - diffDays >= 1) {
+                        d -= diffDays;
+                        diffDays = 0;
+                    } else {
+                        diffDays -= d;
+                        m--;
+                        if (m < 1) { m = 12; y--; }
+                        d = bsMonthDays[y] ? bsMonthDays[y][m - 1] : 30;
+                    }
+                }
+            }
+
+            const mm = String(m).padStart(2, '0');
+            const dd = String(d).padStart(2, '0');
+            const weekdayName = nepaliWeekdays[now.getDay()];
+            const monthName = nepaliMonths[m - 1] || 'कार्तिक';
+
+            return {
+                numeric: `${toNepaliDigits(y)}-${toNepaliDigits(mm)}-${toNepaliDigits(dd)}`,
+                fullText: `${toNepaliDigits(y)} ${monthName} ${toNepaliDigits(d)} गते, ${weekdayName}`,
+                monthName: monthName
+            };
+        }
+
+        function getTodayNepaliDate() {
+            return getTodayNepaliDateObj().numeric;
+        }
+
+        // ---------------------------------------------------------
+        // 2. STATE & LOCAL-FIRST DATABASE INITIALIZATION
+        // ---------------------------------------------------------
+        const DB_KEY = 'khanepani_sahakari_erp_v1';
+
+        const defaultState = {
+            settings: {
+                orgName: 'पुरानागाउँ खानेपानी तथा सहकारी संस्था लि.',
+                orgAddress: 'बनेपा-५, काभ्रेपलाञ्चोक',
+                orgPhone: '०११-६६१२३४',
+                logo: 'https://placehold.co/80x80/1d4ed8/ffffff?text=खा',
+                operatorName: 'रमेश प्रसाद अधिकारी',
+                operatorPost: 'लेखापाल / अपरेटर',
+                minUnits: 6,
+                minCharge: 250,
+                extraRate: 140,
+                finePct: 5,
+                loanRate: 14,
+                loanStartDays: 0,
+                tankerSaleRate: 0.50,
+                tankerWageRate: 0.10,
+                openCash: 45000,
+                openCapital: 250000,
+                openLoan: 0,
+                dateOffset: 0,
+                smsTemplate: 'नमस्कार {name}, {org} को {month} महिनाको मिटर रिडिङ ({units} युनिट) बापत बिल रु.{bill} र कुल तिर्नुपर्ने रकम रु.{total} भएको जानकारी गराइन्छ। मिति: {date}'
+            },
+            members: [
+                { id: 'm1', code: 'M-101', name: 'राम बहादुर थापा', guardian: 'हरि बहादुर थापा', citizenship: '२७-०१-७२-००१२१', phone: '9841234567', address: 'वडा नं. ५, माथिल्लो टोल', meter: 'MTR-101', lastReading: 120, due: 250, photo: '' },
+                { id: 'm2', code: 'M-102', name: 'सीता देवी श्रेष्ठ', guardian: 'कृष्ण लाल श्रेष्ठ', citizenship: '२७-०१-७४-०४५१२', phone: '9851098765', address: 'वडा नं. ५, बजार चोक', meter: 'MTR-102', lastReading: 85, due: 0, photo: '' },
+                { id: 'm3', code: 'M-103', name: 'गोपाल प्रसाद तिमल्सिना', guardian: 'नारायण तिमल्सिना', citizenship: '२७-०१-७०-०९८२१', phone: '9849112233', address: 'वडा नं. ४, गैरीगाउँ', meter: 'MTR-103', lastReading: 210, due: 670, photo: '' }
+            ],
+            readings: [
+                { id: 'r1', date: '२०८३-०६-२५', month: 'असोज', memberId: 'm1', memberName: 'राम बहादुर थापा', prev: 114, curr: 120, units: 6, bill: 250, fine: 0, total: 250 }
+            ],
+            receipts: [
+                { id: 'rc1', receiptNo: 'RCP-1001', date: '२०८३-०६-२८', memberId: 'm2', memberName: 'सीता देवी श्रेष्ठ', amount: 390, discount: 0, mode: 'नगद (Cash)', remarks: 'असोज महसुल चुक्ता' }
+            ],
+            incomes: [
+                { id: 'i1', date: '२०८३-०६-२८', category: 'पानी महसुल आम्दानी', amount: 390, mode: 'नगद (Cash)', remarks: 'रसिद नं. RCP-1001' },
+                { id: 'i2', date: '२०८३-०७-०५', category: 'नयाँ मिटर जडान', amount: 5500, mode: 'नगद (Cash)', remarks: 'नयाँ धारा जडान शुल्क' }
+            ],
+            expenses: [
+                { id: 'e1', date: '२०८३-०७-०२', category: 'विद्युत महसुल', amount: 3200, mode: 'नगद (Cash)', remarks: 'पम्प हाउस बिजुली बिल' },
+                { id: 'e2', date: '२०८३-०७-१०', category: 'मर्मत खर्च', amount: 1850, mode: 'नगद (Cash)', remarks: 'पाइप तथा भल्भ खरिद' }
+            ],
+            tankerSales: [
+                { id: 't1', date: '२०८३-०७-१२', customer: 'बा ३ ख २२११ (होटल सनराइज)', worker: 'सुरेश तामाङ', liters: 6000, saleAmount: 3000, wageAmount: 600 }
+            ],
+            loans: [
+                { id: 'l1', loanNo: 'LN-001', date: '२०८३-०६-१५', memberId: 'm3', memberName: 'गोपाल प्रसाद तिमल्सिना', principal: 50000, paidPrincipal: 10000, rate: 14, graceDays: 0, status: 'सक्रिय' }
+            ],
+            banks: [
+                { id: 'b1', name: 'नेपाल बैंक लिमिटेड', accNo: '04500106789123000001', balance: 185000 }
+            ],
+            bankTxs: [
+                { id: 'bt1', date: '२०८३-०७-०१', bankId: 'b1', bankName: 'नेपाल बैंक लिमिटेड', type: 'deposit', amount: 185000, remarks: 'ओपनिङ बैंक मौज्दात' }
+            ],
+            staff: [
+                { id: 's1', name: 'हरि शरण के.सी.', post: 'मिटर रिडर तथा प्लम्बर', salary: 18000, allowance: 2000 },
+                { id: 's2', name: 'सरिता कुमारी लामा', post: 'कार्यालय सहायक', salary: 16000, allowance: 1500 }
+            ]
+        };
+
+        let db = JSON.parse(localStorage.getItem(DB_KEY)) || JSON.parse(JSON.stringify(defaultState));
+
+        function saveDB() {
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+            refreshAllUI();
+        }
+
+        function showToast(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const el = document.createElement('div');
+            const bg = type === 'success' ? 'bg-emerald-600' : (type === 'error' ? 'bg-rose-600' : 'bg-blue-600');
+            el.className = `${bg} text-white px-4 py-3 rounded-xl shadow-lg text-sm font-semibold flex items-center gap-2 transition-all duration-300`;
+            el.innerHTML = `<i class="fas fa-check-circle"></i> <span>${msg}</span>`;
+            container.appendChild(el);
+            setTimeout(() => { el.remove(); }, 3500);
+        }
+
+        function formatRs(num) {
+            return 'रु. ' + Number(num || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // ---------------------------------------------------------
+        // 3. NAVIGATION & UI INITIALIZATION
+        // ---------------------------------------------------------
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-section').forEach(s => s.classList.add('hidden'));
+            document.getElementById('tab-' + tabId).classList.remove('hidden');
+
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                if (btn.dataset.tab === tabId) {
+                    btn.classList.add('bg-blue-600', 'text-white');
+                    btn.classList.remove('text-slate-300', 'hover:bg-slate-800');
+                } else {
+                    btn.classList.remove('bg-blue-600', 'text-white');
+                    btn.classList.add('text-slate-300', 'hover:bg-slate-800');
+                }
+            });
+
+            if (window.innerWidth < 1024) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('sidebar-backdrop').classList.add('hidden');
+            }
+
+            if (tabId === 'reports') renderFinancialReport('pl');
+        }
+
+        function autoFillNepaliDates() {
+            const bsObj = getTodayNepaliDateObj();
+            const todayBS = bsObj.numeric;
+            document.getElementById('sidebar-bs-date').textContent = todayBS;
+            document.getElementById('mobile-bs-date').textContent = todayBS;
+            const dashDateEl = document.getElementById('dashboard-full-bs-date');
+            if (dashDateEl) {
+                dashDateEl.innerHTML = `<i class="far fa-calendar-check mr-1 text-amber-700"></i>${bsObj.fullText} (${todayBS})`;
+            }
+            const readMonthEl = document.getElementById('read-month');
+            if (readMonthEl && bsObj.monthName) {
+                readMonthEl.value = bsObj.monthName;
+            }
+            ['read-date', 'pay-date', 'exp-date', 'inc-date', 'tnk-date', 'loan-date', 'repay-date', 'btx-date'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.value = todayBS;
+            });
+        }
+
+        // ---------------------------------------------------------
+        // 4. METER READING & AUTO SMS/WHATSAPP ENGINE
+        // ---------------------------------------------------------
+        function onSelectReadingMember() {
+            const mId = document.getElementById('read-member').value;
+            const member = db.members.find(m => m.id === mId);
+            if (!member) {
+                document.getElementById('read-prev').value = '';
+                document.getElementById('calc-prev-due').textContent = 'रु. ०.००';
+                return;
+            }
+            document.getElementById('read-prev').value = member.lastReading;
+            document.getElementById('read-curr').value = '';
+            document.getElementById('read-units').value = '';
+            calculateReadingBill();
+        }
+
+        function calculateReadingBill() {
+            const mId = document.getElementById('read-member').value;
+            const member = db.members.find(m => m.id === mId);
+            if (!member) return;
+
+            const prev = parseFloat(document.getElementById('read-prev').value) || 0;
+            const curr = parseFloat(document.getElementById('read-curr').value) || 0;
+            const units = curr >= prev ? (curr - prev) : 0;
+            document.getElementById('read-units').value = units;
+
+            const s = db.settings;
+            let currentCharge = Number(s.minCharge);
+            if (units > Number(s.minUnits)) {
+                currentCharge += (units - Number(s.minUnits)) * Number(s.extraRate);
+            }
+
+            const prevDue = Number(member.due || 0);
+            const fine = prevDue > 0 ? Math.round((prevDue * Number(s.finePct)) / 100) : 0;
+            const grandTotal = currentCharge + prevDue + fine;
+
+            document.getElementById('calc-current-charge').textContent = formatRs(currentCharge);
+            document.getElementById('calc-prev-due').textContent = formatRs(prevDue);
+            document.getElementById('calc-fine').textContent = formatRs(fine);
+            document.getElementById('calc-grand-total').textContent = formatRs(grandTotal);
+        }
+
+        function saveMeterReading(e) {
+            e.preventDefault();
+            const mId = document.getElementById('read-member').value;
+            const member = db.members.find(m => m.id === mId);
+            if (!member) return;
+
+            const date = document.getElementById('read-date').value;
+            const month = document.getElementById('read-month').value;
+            const prev = parseFloat(document.getElementById('read-prev').value);
+            const curr = parseFloat(document.getElementById('read-curr').value);
+
+            if (curr < prev) {
+                showToast('हालको अङ्क अघिल्लो अङ्कभन्दा कम हुन सक्दैन!', 'error');
+                return;
+            }
+
+            const units = curr - prev;
+            const s = db.settings;
+            let bill = Number(s.minCharge);
+            if (units > Number(s.minUnits)) {
+                bill += (units - Number(s.minUnits)) * Number(s.extraRate);
+            }
+            const prevDue = Number(member.due || 0);
+            const fine = prevDue > 0 ? Math.round((prevDue * Number(s.finePct)) / 100) : 0;
+            const totalPayable = bill + prevDue + fine;
+
+            // Save reading record
+            db.readings.unshift({
+                id: 'r' + Date.now(),
+                date, month,
+                memberId: member.id,
+                memberName: member.name,
+                prev, curr, units, bill, fine,
+                total: totalPayable
+            });
+
+            // Update member's last reading and cumulative due
+            member.lastReading = curr;
+            member.due = totalPayable;
+
+            saveDB();
+            showToast('मिटर रिडिङ सफलतापूर्वक सुरक्षित भयो!');
+
+            // Prepare SMS/WhatsApp message modal
+            const formattedMsg = s.smsTemplate
+                .replace('{org}', s.orgName)
+                .replace('{name}', member.name)
+                .replace('{month}', month)
+                .replace('{units}', units)
+                .replace('{bill}', bill)
+                .replace('{total}', totalPayable)
+                .replace('{date}', date);
+
+            openSmsModal(member.name, member.phone, formattedMsg);
+            document.getElementById('reading-form').reset();
+            autoFillNepaliDates();
+        }
+
+        function openSmsModal(name, phone, text) {
+            document.getElementById('modal-rec-name').textContent = name;
+            document.getElementById('modal-rec-phone').textContent = phone;
+            const txtBox = document.getElementById('modal-sms-text');
+            txtBox.value = text;
+
+            const updateLinks = () => {
+                const cleanPhone = phone.replace(/\D/g, '');
+                const intlPhone = cleanPhone.startsWith('977') ? cleanPhone : '977' + cleanPhone;
+                const encoded = encodeURIComponent(txtBox.value);
+                document.getElementById('btn-send-whatsapp').href = `https://wa.me/${intlPhone}?text=${encoded}`;
+                document.getElementById('btn-send-sim').href = `sms:${cleanPhone}?body=${encoded}`;
+            };
+            txtBox.oninput = updateLinks;
+            updateLinks();
+
+            document.getElementById('sms-modal').classList.remove('hidden');
+        }
+
+        function closeSmsModal() {
+            document.getElementById('sms-modal').classList.add('hidden');
+        }
+
+        // ---------------------------------------------------------
+        // 5. PAYMENT RECEIPT & MEMBER STATEMENT
+        // ---------------------------------------------------------
+        function toggleBankSelect(modeId, divId) {
+            const mode = document.getElementById(modeId).value;
+            const div = document.getElementById(divId);
+            if (mode.includes('बैंक')) div.classList.remove('hidden');
+            else div.classList.add('hidden');
+        }
+
+        function onSelectPaymentMember() {
+            const mId = document.getElementById('pay-member').value;
+            const member = db.members.find(m => m.id === mId);
+            document.getElementById('pay-current-due').textContent = member ? formatRs(member.due) : 'रु. ०.००';
+        }
+
+        function fillFullDue() {
+            const mId = document.getElementById('pay-member').value;
+            const member = db.members.find(m => m.id === mId);
+            if (member) document.getElementById('pay-amount').value = member.due;
+        }
+
+        function savePaymentReceipt(e) {
+            e.preventDefault();
+            const mId = document.getElementById('pay-member').value;
+            const member = db.members.find(m => m.id === mId);
+            if (!member) return;
+
+            const date = document.getElementById('pay-date').value;
+            const mode = document.getElementById('pay-mode').value;
+            const amount = parseFloat(document.getElementById('pay-amount').value) || 0;
+            const discount = parseFloat(document.getElementById('pay-discount').value) || 0;
+            const remarks = document.getElementById('pay-remarks').value || 'पानी महसुल भुक्तानी';
+            const receiptNo = 'RCP-' + (1001 + db.receipts.length);
+
+            member.due = Math.max(0, Number(member.due) - (amount + discount));
+
+            db.receipts.unshift({
+                id: 'rc' + Date.now(),
+                receiptNo, date,
+                memberId: member.id,
+                memberName: member.name,
+                amount, discount, mode, remarks
+            });
+
+            // Auto post to Income (पानी महसुल आम्दानी)
+            db.incomes.unshift({
+                id: 'i' + Date.now(),
+                date,
+                category: 'पानी महसुल आम्दानी',
+                amount,
+                mode,
+                remarks: `${member.name} (${receiptNo})`
+            });
+
+            // If paid via Bank, update Bank balance
+            if (mode.includes('बैंक')) {
+                const bankId = document.getElementById('pay-bank-id').value;
+                const bank = db.banks.find(b => b.id === bankId);
+                if (bank) {
+                    bank.balance += amount;
+                    db.bankTxs.unshift({
+                        id: 'bt' + Date.now(),
+                        date, bankId: bank.id, bankName: bank.name,
+                        type: 'deposit', amount, remarks: `महसुल रसिद ${receiptNo} (${member.name})`
+                    });
+                }
+            }
+
+            saveDB();
+            showToast('भुक्तानी रसिद सुरक्षित भयो!');
+
+            // Render Printable Receipt
+            const s = db.settings;
+            document.getElementById('receipt-preview-box').innerHTML = `
+                <div class="bg-white p-5 rounded-lg border border-slate-300 text-slate-900">
+                    ${getLetterheadHTML()}
+                    <div class="text-center font-bold text-base underline my-2">भुक्तानी रसिद (PAYMENT RECEIPT)</div>
+                    <div class="flex justify-between text-xs mb-3">
+                        <span><strong>रसिद नं.:</strong> ${receiptNo}</span>
+                        <span><strong>मिति:</strong> ${date}</span>
+                    </div>
+                    <div class="text-sm space-y-1.5 border-y border-slate-200 py-3">
+                        <div><strong>सदस्यको नाम:</strong> ${member.name} (${member.code})</div>
+                        <div><strong>मिटर नं. / ठेगाना:</strong> ${member.meter} | ${member.address}</div>
+                        <div><strong>भुक्तानी माध्यम:</strong> ${mode}</div>
+                        <div><strong>विवरण:</strong> ${remarks}</div>
+                    </div>
+                    <div class="py-3 space-y-1 text-sm">
+                        <div class="flex justify-between"><span>बुझाएको रकम:</span> <strong>${formatRs(amount)}</strong></div>
+                        <div class="flex justify-between"><span>छुट रकम:</span> <span>${formatRs(discount)}</span></div>
+                        <div class="flex justify-between text-base font-extrabold border-t border-slate-300 pt-1.5">
+                            <span>अब बाँकी बक्यौता:</span> <span>${formatRs(member.due)}</span>
+                        </div>
+                    </div>
+                    ${getSignatureFooterHTML()}
+                </div>
+            `;
+
+            document.getElementById('payment-form').reset();
+            autoFillNepaliDates();
+        }
+
+        function renderMemberStatement() {
+            const mId = document.getElementById('stmt-member').value;
+            const member = db.members.find(m => m.id === mId);
+            const tbody = document.getElementById('stmt-table-body');
+            if (!member) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-400">कृपया माथिबाट सदस्य छान्नुहोस्</td></tr>`;
+                return;
+            }
+
+            document.getElementById('stmt-org-header').innerHTML = getLetterheadHTML();
+            document.getElementById('stmt-org-footer').innerHTML = getSignatureFooterHTML();
+            document.getElementById('stmt-member-info').innerHTML = `
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                    <div><span class="text-slate-500">सदस्य नाम:</span> <strong class="block text-sm">${member.name} (${member.code})</strong></div>
+                    <div><span class="text-slate-500">मिटर नं.:</span> <strong class="block text-sm">${member.meter}</strong></div>
+                    <div><span class="text-slate-500">फोन / ठेगाना:</span> <strong class="block text-sm">${member.phone} | ${member.address}</strong></div>
+                    <div><span class="text-slate-500">हालको बाँकी बक्यौता:</span> <strong class="block text-sm text-rose-600">${formatRs(member.due)}</strong></div>
+                </div>
+            `;
+
+            let rows = [];
+            db.readings.filter(r => r.memberId === mId).forEach(r => {
+                rows.push({
+                    date: r.date,
+                    desc: `${r.month} महिनाको पानी महसुल बिल (जरिमाना रु.${r.fine})`,
+                    unit: `${r.prev} → ${r.curr} (${r.units} यु.)`,
+                    dr: r.bill + r.fine,
+                    cr: 0
+                });
+            });
+            db.receipts.filter(rc => rc.memberId === mId).forEach(rc => {
+                rows.push({
+                    date: rc.date,
+                    desc: `भुक्तानी रसिद (${rc.receiptNo}) - ${rc.mode}`,
+                    unit: '-',
+                    dr: 0,
+                    cr: rc.amount + rc.discount
+                });
+            });
+
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center text-slate-500">कुनै कारोबार भेटिएन। हालको बाँकी: ${formatRs(member.due)}</td></tr>`;
+                return;
+            }
+
+            let running = 0;
+            tbody.innerHTML = rows.map(row => {
+                running += (row.dr - row.cr);
+                return `
+                    <tr class="border-b border-slate-200">
+                        <td class="p-2.5 border border-slate-300">${row.date}</td>
+                        <td class="p-2.5 border border-slate-300">${row.desc}</td>
+                        <td class="p-2.5 border border-slate-300 text-right">${row.unit}</td>
+                        <td class="p-2.5 border border-slate-300 text-right text-rose-600 font-semibold">${row.dr > 0 ? formatRs(row.dr) : '-'}</td>
+                        <td class="p-2.5 border border-slate-300 text-right text-emerald-700 font-semibold">${row.cr > 0 ? formatRs(row.cr) : '-'}</td>
+                        <td class="p-2.5 border border-slate-300 text-right font-bold">${formatRs(member.due)}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // ---------------------------------------------------------
+        // 6. MEMBER KYC MASTER DATABASE
+        // ---------------------------------------------------------
+        function saveMemberKYC(e) {
+            e.preventDefault();
+            const editId = document.getElementById('mem-edit-id').value;
+            const photoInput = document.getElementById('mem-photo');
+
+            const processSave = (photoData) => {
+                const payload = {
+                    code: document.getElementById('mem-code').value,
+                    name: document.getElementById('mem-name').value,
+                    guardian: document.getElementById('mem-guardian').value,
+                    citizenship: document.getElementById('mem-citizenship').value,
+                    phone: document.getElementById('mem-phone').value,
+                    address: document.getElementById('mem-address').value,
+                    meter: document.getElementById('mem-meter').value,
+                    lastReading: parseFloat(document.getElementById('mem-init-read').value) || 0,
+                    due: parseFloat(document.getElementById('mem-open-due').value) || 0
+                };
+
+                if (editId) {
+                    const idx = db.members.findIndex(m => m.id === editId);
+                    if (idx !== -1) {
+                        db.members[idx] = { ...db.members[idx], ...payload, photo: photoData || db.members[idx].photo };
+                    }
+                    showToast('सदस्य विवरण अद्यावधिक भयो!');
+                } else {
+                    db.members.push({ id: 'm' + Date.now(), ...payload, photo: photoData || '' });
+                    showToast('नयाँ सदस्य KYC दर्ता भयो!');
+                }
+                resetMemberForm();
+                saveDB();
+            };
+
+            if (photoInput.files && photoInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = ev => processSave(ev.target.result);
+                reader.readAsDataURL(photoInput.files[0]);
+            } else {
+                processSave(null);
+            }
+        }
+
+        function editMember(id) {
+            const m = db.members.find(x => x.id === id);
+            if (!m) return;
+            document.getElementById('mem-edit-id').value = m.id;
+            document.getElementById('mem-code').value = m.code;
+            document.getElementById('mem-name').value = m.name;
+            document.getElementById('mem-guardian').value = m.guardian;
+            document.getElementById('mem-citizenship').value = m.citizenship;
+            document.getElementById('mem-phone').value = m.phone;
+            document.getElementById('mem-address').value = m.address;
+            document.getElementById('mem-meter').value = m.meter;
+            document.getElementById('mem-init-read').value = m.lastReading;
+            document.getElementById('mem-open-due').value = m.due;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function resetMemberForm() {
+            document.getElementById('member-form').reset();
+            document.getElementById('mem-edit-id').value = '';
+        }
+
+        // ---------------------------------------------------------
+        // 7. INCOME, EXPENSE & TANKER SALES ENGINE
+        // ---------------------------------------------------------
+        function saveTransaction(e, type) {
+            e.preventDefault();
+            if (type === 'expense') {
+                const item = {
+                    id: 'e' + Date.now(),
+                    date: document.getElementById('exp-date').value,
+                    category: document.getElementById('exp-category').value,
+                    amount: parseFloat(document.getElementById('exp-amount').value) || 0,
+                    mode: document.getElementById('exp-mode').value,
+                    remarks: document.getElementById('exp-remarks').value
+                };
+                db.expenses.unshift(item);
+                document.getElementById('expense-form').reset();
+                showToast('खर्च इन्ट्री सुरक्षित भयो!');
+            } else {
+                const item = {
+                    id: 'i' + Date.now(),
+                    date: document.getElementById('inc-date').value,
+                    category: document.getElementById('inc-category').value,
+                    amount: parseFloat(document.getElementById('inc-amount').value) || 0,
+                    mode: document.getElementById('inc-mode').value,
+                    remarks: document.getElementById('inc-remarks').value
+                };
+                db.incomes.unshift(item);
+                document.getElementById('income-form').reset();
+                showToast('आम्दानी इन्ट्री सुरक्षित भयो!');
+            }
+            autoFillNepaliDates();
+            saveDB();
+        }
+
+        function calculateTankerTotals() {
+            const liters = parseFloat(document.getElementById('tnk-liters').value) || 0;
+            const saleRate = Number(db.settings.tankerSaleRate || 0);
+            const wageRate = Number(db.settings.tankerWageRate || 0);
+            const sale = liters * saleRate;
+            const wage = liters * wageRate;
+            document.getElementById('tnk-total-sale').textContent = formatRs(sale);
+            document.getElementById('tnk-total-wage').textContent = formatRs(wage);
+            document.getElementById('tnk-net-profit').textContent = formatRs(sale - wage);
+        }
+
+        function saveTankerSale(e) {
+            e.preventDefault();
+            const date = document.getElementById('tnk-date').value;
+            const customer = document.getElementById('tnk-customer').value;
+            const worker = document.getElementById('tnk-worker').value || 'ट्याङ्कर चालक';
+            const liters = parseFloat(document.getElementById('tnk-liters').value) || 0;
+
+            const saleAmount = liters * Number(db.settings.tankerSaleRate || 0);
+            const wageAmount = liters * Number(db.settings.tankerWageRate || 0);
+
+            db.tankerSales.unshift({
+                id: 't' + Date.now(),
+                date, customer, worker, liters, saleAmount, wageAmount
+            });
+
+            // Auto post to Income
+            db.incomes.unshift({
+                id: 'i' + Date.now(),
+                date,
+                category: 'ट्याङ्कर पानी बिक्री आम्दानी',
+                amount: saleAmount,
+                mode: 'नगद (Cash)',
+                remarks: `${customer} (${liters} लिटर)`
+            });
+
+            // Auto post Labor Wage to Expense
+            if (wageAmount > 0) {
+                db.expenses.unshift({
+                    id: 'e' + Date.now(),
+                    date,
+                    category: 'ट्याङ्कर ज्याला खर्च',
+                    amount: wageAmount,
+                    mode: 'नगद (Cash)',
+                    remarks: `${worker} - ${liters} लिटर पानी ढुवानी ज्याला`
+                });
+            }
+
+            document.getElementById('tanker-form').reset();
+            autoFillNepaliDates();
+            saveDB();
+            showToast('ट्याङ्कर बिक्री आम्दानी र प्रतिलिटर ज्याला खर्च दुवै इन्ट्री भयो!');
+        }
+
+        // ---------------------------------------------------------
+        // 8. LOAN, BANK & PAYROLL ENGINES
+        // ---------------------------------------------------------
+        function saveLoanDisbursement(e) {
+            e.preventDefault();
+            const mId = document.getElementById('loan-member').value;
+            const member = db.members.find(m => m.id === mId);
+            if (!member) return;
+
+            const date = document.getElementById('loan-date').value;
+            const principal = parseFloat(document.getElementById('loan-amount').value) || 0;
+            const rate = parseFloat(document.getElementById('loan-rate').value) || Number(db.settings.loanRate);
+            const servicePct = parseFloat(document.getElementById('loan-service-pct').value) || 0;
+            const graceDays = parseInt(document.getElementById('loan-grace-days').value) || Number(db.settings.loanStartDays);
+            const loanNo = 'LN-' + String(db.loans.length + 1).padStart(3, '0');
+
+            db.loans.unshift({
+                id: 'l' + Date.now(),
+                loanNo, date,
+                memberId: member.id,
+                memberName: member.name,
+                principal,
+                paidPrincipal: 0,
+                rate, graceDays,
+                status: 'सक्रिय'
+            });
+
+            // Post service charge income if > 0
+            const serviceCharge = (principal * servicePct) / 100;
+            if (serviceCharge > 0) {
+                db.incomes.unshift({
+                    id: 'i' + Date.now(),
+                    date,
+                    category: 'ऋण सेवा शुल्क आम्दानी',
+                    amount: serviceCharge,
+                    mode: 'नगद (Cash)',
+                    remarks: `ऋण नं. ${loanNo} (${member.name})`
+                });
+            }
+
+            document.getElementById('loan-form').reset();
+            autoFillNepaliDates();
+            saveDB();
+            showToast('नयाँ ऋण लगानी दर्ता भयो!');
+        }
+
+        function onSelectLoanForRepay() {
+            const loanId = document.getElementById('repay-loan-id').value;
+            const loan = db.loans.find(l => l.id === loanId);
+            const infoBox = document.getElementById('loan-accrued-info');
+            if (!loan) return;
+
+            const remPrincipal = loan.principal - loan.paidPrincipal;
+            // Estimate 1 month interest after graceDays rule
+            const monthlyInt = Math.round((remPrincipal * loan.rate) / (100 * 12));
+            infoBox.innerHTML = `
+                <strong>ऋणी:</strong> ${loan.memberName} | <strong>बाँकी साँवा:</strong> ${formatRs(remPrincipal)} <br>
+                <strong>नियम:</strong> लगानी मिति (${loan.date}) को <strong>${loan.graceDays} दिनपछि</strong> वार्षिक ${loan.rate}% ले ब्याज लाग्ने (अनुमानित १ महिनाको ब्याज: <strong>${formatRs(monthlyInt)}</strong>)
+            `;
+            document.getElementById('repay-interest').value = monthlyInt;
+        }
+
+        function saveLoanRepayment(e) {
+            e.preventDefault();
+            const loanId = document.getElementById('repay-loan-id').value;
+            const loan = db.loans.find(l => l.id === loanId);
+            if (!loan) return;
+
+            const date = document.getElementById('repay-date').value;
+            const pPaid = parseFloat(document.getElementById('repay-principal').value) || 0;
+            const iPaid = parseFloat(document.getElementById('repay-interest').value) || 0;
+
+            loan.paidPrincipal += pPaid;
+            if (loan.paidPrincipal >= loan.principal) {
+                loan.paidPrincipal = loan.principal;
+                loan.status = 'चुक्ता';
+            }
+
+            if (iPaid > 0) {
+                db.incomes.unshift({
+                    id: 'i' + Date.now(),
+                    date,
+                    category: 'ऋण ब्याज आम्दानी',
+                    amount: iPaid,
+                    mode: 'नगद (Cash)',
+                    remarks: `${loan.loanNo} - ${loan.memberName}`
+                });
+            }
+
+            document.getElementById('loan-repay-form').reset();
+            autoFillNepaliDates();
+            saveDB();
+            showToast('ऋण साँवा तथा ब्याज असुली दर्ता भयो!');
+        }
+
+        function saveBankAccount(e) {
+            e.preventDefault();
+            const name = document.getElementById('bank-name').value;
+            const accNo = document.getElementById('bank-acc-no').value;
+            const balance = parseFloat(document.getElementById('bank-open-bal').value) || 0;
+            const id = 'b' + Date.now();
+
+            db.banks.push({ id, name, accNo, balance });
+            db.bankTxs.unshift({
+                id: 'bt' + Date.now(),
+                date: getTodayNepaliDate(),
+                bankId: id, bankName: name,
+                type: 'deposit', amount: balance, remarks: 'खाता खोल्दाको सुरुवाती मौज्दात'
+            });
+            e.target.reset();
+            saveDB();
+            showToast('नयाँ बैंक खाता थपियो!');
+        }
+
+        function saveBankTransaction(e) {
+            e.preventDefault();
+            const bankId = document.getElementById('btx-bank-id').value;
+            const bank = db.banks.find(b => b.id === bankId);
+            if (!bank) return;
+
+            const date = document.getElementById('btx-date').value;
+            const type = document.getElementById('btx-type').value;
+            const amount = parseFloat(document.getElementById('btx-amount').value) || 0;
+            const remarks = document.getElementById('btx-remarks').value || (type === 'deposit' ? 'नगद जम्मा' : 'चेक मार्फत झिकेको');
+
+            if (type === 'deposit') bank.balance += amount;
+            else bank.balance -= amount;
+
+            db.bankTxs.unshift({
+                id: 'bt' + Date.now(),
+                date, bankId: bank.id, bankName: bank.name,
+                type, amount, remarks
+            });
+
+            e.target.reset();
+            autoFillNepaliDates();
+            saveDB();
+            showToast('बैंक कारोबार सुरक्षित भयो!');
+        }
+
+        function saveStaff(e) {
+            e.preventDefault();
+            db.staff.push({
+                id: 's' + Date.now(),
+                name: document.getElementById('stf-name').value,
+                post: document.getElementById('stf-post').value,
+                salary: parseFloat(document.getElementById('stf-salary').value) || 0,
+                allowance: parseFloat(document.getElementById('stf-allowance').value) || 0
+            });
+            e.target.reset();
+            saveDB();
+            showToast('कर्मचारी विवरण थपियो!');
+        }
+
+        function payStaffSalary(staffId) {
+            const stf = db.staff.find(s => s.id === staffId);
+            if (!stf) return;
+            const total = stf.salary + stf.allowance;
+            const today = getTodayNepaliDate();
+
+            db.expenses.unshift({
+                id: 'e' + Date.now(),
+                date: today,
+                category: 'तलब',
+                amount: total,
+                mode: 'नगद (Cash)',
+                remarks: `${stf.name} (${stf.post}) - मासिक तलब भत्ता`
+            });
+            saveDB();
+            showToast(`${stf.name} को तलब ${formatRs(total)} खर्चमा दर्ता भयो!`);
+        }
+
+        // ---------------------------------------------------------
+        // 9. OFFICIAL FINANCIAL REPORTS (LOGO + OPERATOR SIGNATURE)
+        // ---------------------------------------------------------
+        function getLetterheadHTML() {
+            const s = db.settings;
+            return `
+                <div class="flex items-center justify-between border-b-2 border-slate-800 pb-3">
+                    <img src="${s.logo}" alt="Logo" class="w-16 h-16 object-contain rounded-lg border border-slate-200">
+                    <div class="text-center flex-1 px-2">
+                        <h1 class="text-xl font-extrabold text-slate-900">${s.orgName}</h1>
+                        <p class="text-xs text-slate-600 font-semibold">${s.orgAddress} | फोन: ${s.orgPhone}</p>
+                    </div>
+                    <div class="text-right text-xs text-slate-600">
+                        <div>मिति: <strong>${getTodayNepaliDate()}</strong></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function getSignatureFooterHTML() {
+            const s = db.settings;
+            return `
+                <div class="flex justify-between items-end pt-8 text-xs text-slate-800">
+                    <div>
+                        <p class="text-slate-500">प्रणालीबाट स्वतः तयार पारिएको आधिकारिक प्रतिवेदन</p>
+                    </div>
+                    <div class="text-center min-w-[180px]">
+                        <div class="border-b border-slate-800 h-8 mb-1"></div>
+                        <div class="font-bold text-sm">${s.operatorName}</div>
+                        <div class="text-slate-600">${s.operatorPost} (दस्तखत)</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderFinancialReport(type) {
+            document.querySelectorAll('.rep-tab-btn').forEach(b => {
+                if (b.dataset.rep === type) {
+                    b.classList.add('bg-blue-600', 'text-white');
+                    b.classList.remove('bg-slate-100', 'text-slate-700');
+                } else {
+                    b.classList.remove('bg-blue-600', 'text-white');
+                    b.classList.add('bg-slate-100', 'text-slate-700');
+                }
+            });
+
+            document.getElementById('rep-letterhead').innerHTML = getLetterheadHTML();
+            document.getElementById('rep-signature-footer').innerHTML = getSignatureFooterHTML();
+
+            // Aggregate Financials
+            const incByCat = {};
+            db.incomes.forEach(i => incByCat[i.category] = (incByCat[i.category] || 0) + Number(i.amount));
+            const totalIncome = Object.values(incByCat).reduce((a, b) => a + b, 0);
+
+            const expByCat = {};
+            db.expenses.forEach(e => expByCat[e.category] = (expByCat[e.category] || 0) + Number(e.amount));
+            const totalExpense = Object.values(expByCat).reduce((a, b) => a + b, 0);
+
+            const netProfit = totalIncome - totalExpense;
+            const totalBank = db.banks.reduce((a, b) => a + Number(b.balance), 0);
+            const totalDues = db.members.reduce((a, b) => a + Number(b.due), 0);
+            const activeLoanPrincipal = db.loans.reduce((a, b) => a + (Number(b.principal) - Number(b.paidPrincipal)), 0) + Number(db.settings.openLoan || 0);
+            const cashInHand = Number(db.settings.openCash || 0) + totalIncome - totalExpense;
+
+            const container = document.getElementById('rep-body-content');
+
+            if (type === 'pl') {
+                container.innerHTML = `
+                    <h3 class="text-center font-bold text-lg underline mb-4">नाफा नोक्सान हिसाब / आय-व्यय विवरण (Profit & Loss Statement)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <table class="w-full text-sm border border-slate-300 border-collapse">
+                            <thead><tr class="bg-rose-50"><th class="p-2 border border-slate-300 text-left">खर्च शीर्षक (Expenses)</th><th class="p-2 border border-slate-300 text-right">रकम (रु.)</th></tr></thead>
+                            <tbody>
+                                ${Object.entries(expByCat).map(([k, v]) => `<tr><td class="p-2 border border-slate-300">${k}</td><td class="p-2 border border-slate-300 text-right">${formatRs(v)}</td></tr>`).join('')}
+                                ${netProfit > 0 ? `<tr class="bg-emerald-50 font-bold text-emerald-800"><td class="p-2 border border-slate-300">खुद बचत / नाफा (Net Surplus)</td><td class="p-2 border border-slate-300 text-right">${formatRs(netProfit)}</td></tr>` : ''}
+                            </tbody>
+                            <tfoot><tr class="bg-slate-100 font-extrabold"><td class="p-2 border border-slate-300">कुल जम्मा</td><td class="p-2 border border-slate-300 text-right">${formatRs(Math.max(totalIncome, totalExpense))}</td></tr></tfoot>
+                        </table>
+
+                        <table class="w-full text-sm border border-slate-300 border-collapse">
+                            <thead><tr class="bg-emerald-50"><th class="p-2 border border-slate-300 text-left">आम्दानी शीर्षक (Income)</th><th class="p-2 border border-slate-300 text-right">रकम (रु.)</th></tr></thead>
+                            <tbody>
+                                ${Object.entries(incByCat).map(([k, v]) => `<tr><td class="p-2 border border-slate-300">${k}</td><td class="p-2 border border-slate-300 text-right">${formatRs(v)}</td></tr>`).join('')}
+                                ${netProfit < 0 ? `<tr class="bg-rose-50 font-bold text-rose-800"><td class="p-2 border border-slate-300">खुद नोक्सान (Net Deficit)</td><td class="p-2 border border-slate-300 text-right">${formatRs(Math.abs(netProfit))}</td></tr>` : ''}
+                            </tbody>
+                            <tfoot><tr class="bg-slate-100 font-extrabold"><td class="p-2 border border-slate-300">कुल जम्मा</td><td class="p-2 border border-slate-300 text-right">${formatRs(Math.max(totalIncome, totalExpense))}</td></tr></tfoot>
+                        </table>
+                    </div>
+                `;
+            } else if (type === 'bs') {
+                const totalAssets = Math.max(0, cashInHand) + totalBank + totalDues + activeLoanPrincipal;
+                const capital = Number(db.settings.openCapital || 0);
+                const reserveAdj = totalAssets - (capital + netProfit);
+                container.innerHTML = `
+                    <h3 class="text-center font-bold text-lg underline mb-4">संस्थाको वासलात (Balance Sheet)</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <table class="w-full text-sm border border-slate-300 border-collapse">
+                            <thead><tr class="bg-slate-100"><th class="p-2 border border-slate-300 text-left">पूँजी तथा दायित्व (Liabilities & Capital)</th><th class="p-2 border border-slate-300 text-right">रकम (रु.)</th></tr></thead>
+                            <tbody>
+                                <tr><td class="p-2 border border-slate-300">संस्थागत पूँजी कोष (Opening Capital)</td><td class="p-2 border border-slate-300 text-right">${formatRs(capital)}</td></tr>
+                                <tr><td class="p-2 border border-slate-300">चालु वर्षको खुद नाफा/बचत</td><td class="p-2 border border-slate-300 text-right">${formatRs(netProfit)}</td></tr>
+                                <tr><td class="p-2 border border-slate-300">जगेडा तथा अन्य कोष समायोजन</td><td class="p-2 border border-slate-300 text-right">${formatRs(reserveAdj)}</td></tr>
+                            </tbody>
+                            <tfoot><tr class="bg-slate-100 font-extrabold"><td class="p-2 border border-slate-300">कुल दायित्व तथा पूँजी</td><td class="p-2 border border-slate-300 text-right">${formatRs(totalAssets)}</td></tr></tfoot>
+                        </table>
+
+                        <table class="w-full text-sm border border-slate-300 border-collapse">
+                            <thead><tr class="bg-slate-100"><th class="p-2 border border-slate-300 text-left">सम्पत्ति तथा मौज्दात (Assets)</th><th class="p-2 border border-slate-300 text-right">रकम (रु.)</th></tr></thead>
+                            <tbody>
+                                <tr><td class="p-2 border border-slate-300">नगद मौज्दात (Cash in Hand)</td><td class="p-2 border border-slate-300 text-right">${formatRs(Math.max(0, cashInHand))}</td></tr>
+                                <tr><td class="p-2 border border-slate-300">बैंक मौज्दात (Bank Balance)</td><td class="p-2 border border-slate-300 text-right">${formatRs(totalBank)}</td></tr>
+                                <tr><td class="p-2 border border-slate-300">लगानीमा रहेको ऋण साँवा (Loan Portfolio)</td><td class="p-2 border border-slate-300 text-right">${formatRs(activeLoanPrincipal)}</td></tr>
+                                <tr><td class="p-2 border border-slate-300">उठ्न बाँकी पानी महसुल बक्यौता</td><td class="p-2 border border-slate-300 text-right">${formatRs(totalDues)}</td></tr>
+                            </tbody>
+                            <tfoot><tr class="bg-slate-100 font-extrabold"><td class="p-2 border border-slate-300">कुल सम्पत्ति</td><td class="p-2 border border-slate-300 text-right">${formatRs(totalAssets)}</td></tr></tfoot>
+                        </table>
+                    </div>
+                `;
+            } else if (type === 'tb') {
+                container.innerHTML = `
+                    <h3 class="text-center font-bold text-lg underline mb-4">ट्रायल ब्यालेन्स (Trial Balance)</h3>
+                    <table class="w-full text-sm border border-slate-300 border-collapse">
+                        <thead><tr class="bg-slate-100"><th class="p-2 border border-slate-300 text-left">खाता शीर्षक (Account Head)</th><th class="p-2 border border-slate-300 text-right">डेबिट (Dr. रु.)</th><th class="p-2 border border-slate-300 text-right">क्रेडिट (Cr. रु.)</th></tr></thead>
+                        <tbody>
+                            <tr><td class="p-2 border border-slate-300">नगद मौज्दात (Cash)</td><td class="p-2 border border-slate-300 text-right">${formatRs(Math.max(0, cashInHand))}</td><td class="p-2 border border-slate-300 text-right">-</td></tr>
+                            <tr><td class="p-2 border border-slate-300">बैंक मौज्दात (Bank)</td><td class="p-2 border border-slate-300 text-right">${formatRs(totalBank)}</td><td class="p-2 border border-slate-300 text-right">-</td></tr>
+                            <tr><td class="p-2 border border-slate-300">ऋण लगानी (Loan Asset)</td><td class="p-2 border border-slate-300 text-right">${formatRs(activeLoanPrincipal)}</td><td class="p-2 border border-slate-300 text-right">-</td></tr>
+                            <tr><td class="p-2 border border-slate-300">कुल खर्च खाता (All Expenses)</td><td class="p-2 border border-slate-300 text-right">${formatRs(totalExpense)}</td><td class="p-2 border border-slate-300 text-right">-</td></tr>
+                            <tr><td class="p-2 border border-slate-300">कुल आम्दानी खाता (All Incomes)</td><td class="p-2 border border-slate-300 text-right">-</td><td class="p-2 border border-slate-300 text-right">${formatRs(totalIncome)}</td></tr>
+                            <tr><td class="p-2 border border-slate-300">संस्थागत पूँजी तथा ओपनिङ मौज्दात</td><td class="p-2 border border-slate-300 text-right">-</td><td class="p-2 border border-slate-300 text-right">${formatRs(Math.max(0, cashInHand) + totalBank + activeLoanPrincipal + totalExpense - totalIncome)}</td></tr>
+                        </tbody>
+                    </table>
+                `;
+            } else if (type === 'cf') {
+                container.innerHTML = `
+                    <h3 class="text-center font-bold text-lg underline mb-4">नगद प्रवाह विवरण (Cash Flow Statement)</h3>
+                    <table class="w-full text-sm border border-slate-300 border-collapse">
+                        <tbody>
+                            <tr><td class="p-2.5 border border-slate-300 font-semibold">सुरुवाती नगद मौज्दात (Opening Cash Balance)</td><td class="p-2.5 border border-slate-300 text-right font-bold">${formatRs(db.settings.openCash)}</td></tr>
+                            <tr><td class="p-2.5 border border-slate-300 text-emerald-700">(+) कुल नगद आम्दानी प्राप्ति (Operating Cash Inflow)</td><td class="p-2.5 border border-slate-300 text-right text-emerald-700 font-bold">${formatRs(totalIncome)}</td></tr>
+                            <tr><td class="p-2.5 border border-slate-300 text-rose-700">(-) कुल नगद खर्च भुक्तानी (Operating Cash Outflow)</td><td class="p-2.5 border border-slate-300 text-right text-rose-700 font-bold">${formatRs(totalExpense)}</td></tr>
+                            <tr class="bg-blue-50 font-extrabold text-base"><td class="p-3 border border-slate-300">अन्तिम नगद मौज्दात (Closing Cash Balance)</td><td class="p-3 border border-slate-300 text-right text-blue-800">${formatRs(cashInHand)}</td></tr>
+                        </tbody>
+                    </table>
+                `;
+            }
+        }
+
+        function printElement(elementId) {
+            const content = document.getElementById(elementId).innerHTML;
+            const printArea = document.getElementById('print-area');
+            printArea.innerHTML = content;
+            printArea.classList.remove('hidden');
+            window.print();
+            printArea.classList.add('hidden');
+        }
+
+        // ---------------------------------------------------------
+        // 10. MASTER SETTINGS, BACKUP & RESTORE
+        // ---------------------------------------------------------
+        function loadSettingsToForm() {
+            const s = db.settings;
+            document.getElementById('set-org-name').value = s.orgName;
+            document.getElementById('set-org-address').value = s.orgAddress;
+            document.getElementById('set-org-phone').value = s.orgPhone;
+            document.getElementById('set-operator-name').value = s.operatorName;
+            document.getElementById('set-operator-post').value = s.operatorPost;
+            document.getElementById('set-min-units').value = s.minUnits;
+            document.getElementById('set-min-charge').value = s.minCharge;
+            document.getElementById('set-extra-rate').value = s.extraRate;
+            document.getElementById('set-fine-pct').value = s.finePct;
+            document.getElementById('set-loan-rate').value = s.loanRate;
+            document.getElementById('set-loan-start-days').value = s.loanStartDays;
+            document.getElementById('set-tanker-sale-rate').value = s.tankerSaleRate;
+            document.getElementById('set-tanker-wage-rate').value = s.tankerWageRate;
+            document.getElementById('set-open-cash').value = s.openCash;
+            document.getElementById('set-open-capital').value = s.openCapital;
+            document.getElementById('set-open-loan').value = s.openLoan;
+            document.getElementById('set-date-offset').value = s.dateOffset || 0;
+            document.getElementById('set-sms-template').value = s.smsTemplate;
+        }
+
+        function handleLogoUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                db.settings.logo = ev.target.result;
+                saveDB();
+                showToast('संस्थाको लोगो अपडेट भयो!');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function saveMasterSettings(e) {
+            e.preventDefault();
+            const s = db.settings;
+            s.orgName = document.getElementById('set-org-name').value;
+            s.orgAddress = document.getElementById('set-org-address').value;
+            s.orgPhone = document.getElementById('set-org-phone').value;
+            s.operatorName = document.getElementById('set-operator-name').value;
+            s.operatorPost = document.getElementById('set-operator-post').value;
+            s.minUnits = parseFloat(document.getElementById('set-min-units').value) || 6;
+            s.minCharge = parseFloat(document.getElementById('set-min-charge').value) || 250;
+            s.extraRate = parseFloat(document.getElementById('set-extra-rate').value) || 140;
+            s.finePct = parseFloat(document.getElementById('set-fine-pct').value) || 0;
+            s.loanRate = parseFloat(document.getElementById('set-loan-rate').value) || 14;
+            s.loanStartDays = parseInt(document.getElementById('set-loan-start-days').value) || 0;
+            s.tankerSaleRate = parseFloat(document.getElementById('set-tanker-sale-rate').value) || 0.5;
+            s.tankerWageRate = parseFloat(document.getElementById('set-tanker-wage-rate').value) || 0.1;
+            s.openCash = parseFloat(document.getElementById('set-open-cash').value) || 0;
+            s.openCapital = parseFloat(document.getElementById('set-open-capital').value) || 0;
+            s.openLoan = parseFloat(document.getElementById('set-open-loan').value) || 0;
+            s.dateOffset = parseInt(document.getElementById('set-date-offset').value) || 0;
+            s.smsTemplate = document.getElementById('set-sms-template').value;
+
+            autoFillNepaliDates();
+            saveDB();
+            showToast('सम्पूर्ण मास्टर सेटिङ सुरक्षित भयो!');
+        }
+
+        function exportFullBackup() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(db, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `Khanepani_Sahakari_Backup_${getTodayNepaliDate()}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            showToast('पूर्ण डेटा ब्याकअप डाउनलोड भयो!');
+        }
+
+        function importFullBackup(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => {
+                try {
+                    const parsed = JSON.parse(ev.target.result);
+                    if (parsed.settings && parsed.members) {
+                        db = parsed;
+                        saveDB();
+                        loadSettingsToForm();
+                        showToast('ब्याकअप डेटा सफलतापूर्वक रिस्टोर भयो!');
+                    } else {
+                        showToast('अमान्य ब्याकअप फाइल!', 'error');
+                    }
+                } catch (err) {
+                    showToast('फाइल पढ्न समस्या भयो!', 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function resetToSampleData() {
+            db = JSON.parse(JSON.stringify(defaultState));
+            saveDB();
+            loadSettingsToForm();
+            showToast('सफ्टवेयर नमुना डेटामा रिसेट भयो!');
+        }
+
+        // ---------------------------------------------------------
+        // 11. RENDER ALL TABLES, DROPDOWNS & CHARTS
+        // ---------------------------------------------------------
+        let financeChartInstance = null;
+
+        function refreshAllUI() {
+            const s = db.settings;
+            document.getElementById('sidebar-org-name').textContent = s.orgName;
+            document.getElementById('mobile-org-title').textContent = s.orgName;
+            document.getElementById('sidebar-logo').src = s.logo;
+            document.getElementById('sidebar-operator-name').textContent = `${s.operatorName} (${s.operatorPost})`;
+
+            document.getElementById('tariff-info-badge').textContent = `न्यूनतम ${s.minUnits} युनिट: रु. ${s.minCharge} | अतिरिक्त: रु. ${s.extraRate}/युनिट | जरिमाना: ${s.finePct}%`;
+            document.getElementById('tanker-rate-badge').textContent = `बिक्री दर: रु. ${s.tankerSaleRate}/लिटर | ज्याला दर: रु. ${s.tankerWageRate}/लिटर`;
+            document.getElementById('loan-rate').value = s.loanRate;
+            document.getElementById('loan-grace-days').value = s.loanStartDays;
+
+            // Populate Member Select Dropdowns
+            const memberOptions = `<option value="">-- सदस्य छान्नुहोस् --</option>` +
+                db.members.map(m => `<option value="${m.id}">${m.code} - ${m.name} (मिटर: ${m.meter})</option>`).join('');
+            ['read-member', 'pay-member', 'stmt-member', 'loan-member'].forEach(id => {
+                const el = document.getElementById(id);
+                const prevVal = el.value;
+                el.innerHTML = memberOptions;
+                if (prevVal) el.value = prevVal;
+            });
+
+            // Populate Bank Dropdowns
+            const bankOptions = db.banks.map(b => `<option value="${b.id}">${b.name} (${formatRs(b.balance)})</option>`).join('');
+            ['pay-bank-id', 'btx-bank-id'].forEach(id => document.getElementById(id).innerHTML = bankOptions);
+
+            // Populate Active Loans Dropdown
+            const activeLoans = db.loans.filter(l => l.status === 'सक्रिय');
+            document.getElementById('repay-loan-id').innerHTML = `<option value="">-- सक्रिय ऋण छान्नुहोस् --</option>` +
+                activeLoans.map(l => `<option value="${l.id}">${l.loanNo} - ${l.memberName} (बाँकी: ${formatRs(l.principal - l.paidPrincipal)})</option>`).join('');
+
+            // KPI Calculations
+            const totalIncome = db.incomes.reduce((a, b) => a + Number(b.amount), 0);
+            const totalExpense = db.expenses.reduce((a, b) => a + Number(b.amount), 0);
+            const totalDues = db.members.reduce((a, b) => a + Number(b.due), 0);
+            const totalLoanOut = db.loans.reduce((a, b) => a + (Number(b.principal) - Number(b.paidPrincipal)), 0) + Number(s.openLoan || 0);
+            const totalBank = db.banks.reduce((a, b) => a + Number(b.balance), 0);
+            const cashBal = Math.max(0, Number(s.openCash || 0) + totalIncome - totalExpense);
+
+            document.getElementById('kpi-members').textContent = toNepaliDigits(db.members.length);
+            document.getElementById('kpi-dues').textContent = formatRs(totalDues);
+            document.getElementById('kpi-income').textContent = formatRs(totalIncome);
+            document.getElementById('kpi-expense').textContent = formatRs(totalExpense);
+            document.getElementById('kpi-loan').textContent = formatRs(totalLoanOut);
+            document.getElementById('kpi-cash-bank').textContent = formatRs(cashBal + totalBank);
+            document.getElementById('kpi-cash-bank-split').textContent = `नगद: ${Math.round(cashBal)} | बैंक: ${Math.round(totalBank)}`;
+
+            // Recent Activities
+            const actList = document.getElementById('recent-activities');
+            const activities = [
+                ...db.readings.slice(0, 3).map(r => ({ date: r.date, title: `रिडिङ: ${r.memberName}`, amt: formatRs(r.total), color: 'text-blue-600' })),
+                ...db.incomes.slice(0, 3).map(i => ({ date: i.date, title: `आम्दानी: ${i.category}`, amt: '+' + formatRs(i.amount), color: 'text-emerald-600' })),
+                ...db.expenses.slice(0, 3).map(e => ({ date: e.date, title: `खर्च: ${e.category}`, amt: '-' + formatRs(e.amount), color: 'text-rose-600' }))
+            ].slice(0, 8);
+            actList.innerHTML = activities.map(a => `
+                <div class="flex items-center justify-between p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div>
+                        <div class="font-semibold text-slate-800 text-xs">${a.title}</div>
+                        <div class="text-[11px] text-slate-400">${a.date}</div>
+                    </div>
+                    <div class="font-bold text-xs ${a.color}">${a.amt}</div>
+                </div>
+            `).join('');
+
+            // Readings Table
+            document.getElementById('readings-table-body').innerHTML = db.readings.map(r => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3">${r.date}</td>
+                    <td class="p-3 font-semibold">${r.month}</td>
+                    <td class="p-3 font-bold">${r.memberName}</td>
+                    <td class="p-3">${r.prev} → ${r.curr}</td>
+                    <td class="p-3 font-bold text-blue-700">${r.units}</td>
+                    <td class="p-3">${formatRs(r.bill)}</td>
+                    <td class="p-3 text-rose-600">${formatRs(r.fine)}</td>
+                    <td class="p-3 font-extrabold">${formatRs(r.total)}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="resendReadingSms('${r.id}')" class="px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-lg text-xs font-bold hover:bg-emerald-200">
+                            <i class="fab fa-whatsapp"></i> SMS
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            renderMembersTable();
+            renderExpenseReport();
+            renderIncomeReport();
+
+            // Tanker Table
+            document.getElementById('tanker-table-body').innerHTML = db.tankerSales.map(t => `
+                <tr>
+                    <td class="p-3">${t.date}</td>
+                    <td class="p-3 font-bold">${t.customer}</td>
+                    <td class="p-3">${t.worker}</td>
+                    <td class="p-3 text-right font-bold text-sky-700">${t.liters} लि.</td>
+                    <td class="p-3 text-right font-bold text-emerald-700">${formatRs(t.saleAmount)}</td>
+                    <td class="p-3 text-right font-bold text-rose-600">${formatRs(t.wageAmount)}</td>
+                </tr>
+            `).join('');
+
+            // Loan Table
+            document.getElementById('loan-table-body').innerHTML = db.loans.map(l => `
+                <tr>
+                    <td class="p-3 font-bold text-purple-700">${l.loanNo}</td>
+                    <td class="p-3">${l.date}</td>
+                    <td class="p-3 font-bold">${l.memberName}</td>
+                    <td class="p-3 text-right">${formatRs(l.principal)}</td>
+                    <td class="p-3 text-right text-emerald-700">${formatRs(l.paidPrincipal)}</td>
+                    <td class="p-3 text-right font-extrabold text-rose-700">${formatRs(l.principal - l.paidPrincipal)}</td>
+                    <td class="p-3 text-center text-xs">${l.rate}% (${l.graceDays} दिनपछि)</td>
+                    <td class="p-3 text-center"><span class="px-2 py-0.5 rounded-full text-xs font-bold ${l.status === 'सक्रिय' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}">${l.status}</span></td>
+                </tr>
+            `).join('');
+
+            // Bank Cards & Transactions
+            document.getElementById('bank-cards-container').innerHTML = db.banks.map(b => `
+                <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                    <div class="text-xs text-slate-500 font-semibold">${b.name}</div>
+                    <div class="text-xs text-slate-400 font-mono mb-2">${b.accNo}</div>
+                    <div class="text-xl font-extrabold text-teal-700">${formatRs(b.balance)}</div>
+                </div>
+            `).join('');
+
+            document.getElementById('bank-tx-table-body').innerHTML = db.bankTxs.map(bt => `
+                <tr>
+                    <td class="p-3">${bt.date}</td>
+                    <td class="p-3 font-bold">${bt.bankName}</td>
+                    <td class="p-3">${bt.remarks}</td>
+                    <td class="p-3 text-right text-emerald-700 font-bold">${bt.type === 'deposit' ? formatRs(bt.amount) : '-'}</td>
+                    <td class="p-3 text-right text-rose-600 font-bold">${bt.type === 'withdraw' ? formatRs(bt.amount) : '-'}</td>
+                </tr>
+            `).join('');
+
+            // Payroll Table
+            document.getElementById('payroll-table-body').innerHTML = db.staff.map(stf => `
+                <tr>
+                    <td class="p-3 font-bold">${stf.name}</td>
+                    <td class="p-3">${stf.post}</td>
+                    <td class="p-3 text-right">${formatRs(stf.salary)}</td>
+                    <td class="p-3 text-right">${formatRs(stf.allowance)}</td>
+                    <td class="p-3 text-right font-extrabold text-slate-900">${formatRs(stf.salary + stf.allowance)}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="payStaffSalary('${stf.id}')" class="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg text-xs font-bold">
+                            तलब भुक्तानी (खर्चमा पोस्ट)
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            updateDashboardChart();
+        }
+
+        function resendReadingSms(readId) {
+            const r = db.readings.find(x => x.id === readId);
+            if (!r) return;
+            const m = db.members.find(x => x.id === r.memberId);
+            const phone = m ? m.phone : '';
+            const s = db.settings;
+            const msg = s.smsTemplate
+                .replace('{org}', s.orgName)
+                .replace('{name}', r.memberName)
+                .replace('{month}', r.month)
+                .replace('{units}', r.units)
+                .replace('{bill}', r.bill)
+                .replace('{total}', r.total)
+                .replace('{date}', r.date);
+            openSmsModal(r.memberName, phone, msg);
+        }
+
+        function renderMembersTable() {
+            const q = (document.getElementById('member-search').value || '').toLowerCase();
+            const filtered = db.members.filter(m =>
+                m.name.toLowerCase().includes(q) || m.phone.includes(q) || m.meter.toLowerCase().includes(q) || m.code.toLowerCase().includes(q)
+            );
+            document.getElementById('members-table-body').innerHTML = filtered.map(m => `
+                <tr class="hover:bg-slate-50">
+                    <td class="p-3 flex items-center gap-2">
+                        <img src="${m.photo || 'https://placehold.co/36x36/e2e8f0/475569?text=' + encodeURIComponent(m.name[0])}" class="w-9 h-9 rounded-full object-cover border">
+                        <span class="font-bold text-indigo-700">${m.code}</span>
+                    </td>
+                    <td class="p-3">
+                        <div class="font-bold text-slate-800">${m.name}</div>
+                        <div class="text-xs text-slate-500">अभिभावक: ${m.guardian || '-'}</div>
+                    </td>
+                    <td class="p-3 text-xs">
+                        <div>ना.नं.: ${m.citizenship || '-'}</div>
+                        <div class="text-slate-500">${m.address || '-'}</div>
+                    </td>
+                    <td class="p-3 font-mono text-xs">${m.phone}</td>
+                    <td class="p-3"><span class="font-bold">${m.meter}</span> <span class="text-xs text-slate-500">(अङ्क: ${m.lastReading})</span></td>
+                    <td class="p-3 text-right font-extrabold ${m.due > 0 ? 'text-rose-600' : 'text-emerald-600'}">${formatRs(m.due)}</td>
+                    <td class="p-3 text-center">
+                        <button onclick="editMember('${m.id}')" class="px-2.5 py-1 bg-slate-200 hover:bg-slate-300 rounded-lg text-xs font-bold">सम्पादन</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function renderExpenseReport() {
+            const catFilter = document.getElementById('filter-exp-cat').value;
+            const catTotals = {};
+            db.expenses.forEach(e => catTotals[e.category] = (catTotals[e.category] || 0) + Number(e.amount));
+
+            document.getElementById('expense-category-cards').innerHTML = Object.entries(catTotals).map(([cat, amt]) => `
+                <div class="p-3 bg-rose-50/70 border border-rose-200 rounded-xl">
+                    <div class="text-xs text-rose-800 font-semibold truncate">${cat}</div>
+                    <div class="text-base font-extrabold text-rose-950 mt-0.5">${formatRs(amt)}</div>
+                </div>
+            `).join('');
+
+            const list = catFilter === 'ALL' ? db.expenses : db.expenses.filter(e => e.category === catFilter);
+            const sum = list.reduce((a, b) => a + Number(b.amount), 0);
+
+            document.getElementById('expense-table-body').innerHTML = list.map(e => `
+                <tr>
+                    <td class="p-3">${e.date}</td>
+                    <td class="p-3 font-bold text-rose-800">${e.category}</td>
+                    <td class="p-3 text-xs">${e.mode}</td>
+                    <td class="p-3">${e.remarks || '-'}</td>
+                    <td class="p-3 text-right font-bold">${formatRs(e.amount)}</td>
+                </tr>
+            `).join('');
+            document.getElementById('expense-filtered-total').textContent = formatRs(sum);
+        }
+
+        function renderIncomeReport() {
+            const catFilter = document.getElementById('filter-inc-cat').value;
+            const catTotals = {};
+            db.incomes.forEach(i => catTotals[i.category] = (catTotals[i.category] || 0) + Number(i.amount));
+
+            document.getElementById('income-category-cards').innerHTML = Object.entries(catTotals).map(([cat, amt]) => `
+                <div class="p-3 bg-emerald-50/70 border border-emerald-200 rounded-xl">
+                    <div class="text-xs text-emerald-800 font-semibold truncate">${cat}</div>
+                    <div class="text-base font-extrabold text-emerald-950 mt-0.5">${formatRs(amt)}</div>
+                </div>
+            `).join('');
+
+            const list = catFilter === 'ALL' ? db.incomes : db.incomes.filter(i => i.category === catFilter);
+            const sum = list.reduce((a, b) => a + Number(b.amount), 0);
+
+            document.getElementById('income-table-body').innerHTML = list.map(i => `
+                <tr>
+                    <td class="p-3">${i.date}</td>
+                    <td class="p-3 font-bold text-emerald-800">${i.category}</td>
+                    <td class="p-3 text-xs">${i.mode}</td>
+                    <td class="p-3">${i.remarks || '-'}</td>
+                    <td class="p-3 text-right font-bold">${formatRs(i.amount)}</td>
+                </tr>
+            `).join('');
+            document.getElementById('income-filtered-total').textContent = formatRs(sum);
+        }
+
+        function updateDashboardChart() {
+            const ctx = document.getElementById('financeChart');
+            if (!ctx) return;
+
+            const totalIncome = db.incomes.reduce((a, b) => a + Number(b.amount), 0);
+            const totalExpense = db.expenses.reduce((a, b) => a + Number(b.amount), 0);
+            const totalDues = db.members.reduce((a, b) => a + Number(b.due), 0);
+            const totalLoan = db.loans.reduce((a, b) => a + (Number(b.principal) - Number(b.paidPrincipal)), 0);
+
+            if (financeChartInstance) financeChartInstance.destroy();
+            financeChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['कुल आम्दानी', 'कुल खर्च', 'उठ्न बाँकी बक्यौता', 'लगानीमा रहेको ऋण'],
+                    datasets: [{
+                        label: 'रकम (रु. मा)',
+                        data: [totalIncome, totalExpense, totalDues, totalLoan],
+                        backgroundColor: ['#10b981', '#f43f5e', '#f59e0b', '#8b5cf6'],
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } }
+                }
+            });
+        }
+
+        // Boot Application
+        window.onload = function () {
+            autoFillNepaliDates();
+            loadSettingsToForm();
+            refreshAllUI();
+        };
+    </script>
+</body>
+</html>
